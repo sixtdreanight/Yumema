@@ -11,12 +11,14 @@
 
 import "dotenv/config";
 import * as readline from "node:readline";
-import { loadConfig, loadProfile } from "./config.js";
-import { logger, setLogLevel } from "./utils.js";
-import { createAIProvider, processMessage } from "./pipeline.js";
-import { startOneBot } from "./onebot.js";
-import type { QQMessage } from "./onebot.js";
-import { startScheduler } from "./scheduler.js";
+import { loadConfig, loadProfile } from "../core/config.js";
+import { logger, setLogLevel } from "../core/utils.js";
+import { createAIProvider, processMessage } from "../core/pipeline.js";
+import { startOneBot } from "../adapters/onebot.js";
+import type { QQMessage } from "../adapters/onebot.js";
+import { startWeChat } from "../adapters/wechat.js";
+import type { WeChatMessage } from "../adapters/wechat.js";
+import { startScheduler } from "../core/scheduler.js";
 
 // ---- 终端测试模式 ----
 
@@ -46,8 +48,14 @@ async function terminalMode(pipelineCtx: Parameters<typeof processMessage>[2]) {
     }
 
     try {
-      const reply = await processMessage("terminal-user", msg, pipelineCtx);
-      console.log(`\x1b[35m${p.name}:\x1b[0m ${reply}\n`);
+      const replies = await processMessage("terminal-user", msg, pipelineCtx);
+      for (let i = 0; i < replies.length; i++) {
+        if (i > 0) {
+          await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+        }
+        console.log(`\x1b[35m${p.name}:\x1b[0m ${replies[i]}`);
+      }
+      console.log();
     } catch (err) {
       logger.error("处理消息失败:", err);
       console.log(`\x1b[35m${p.name}:\x1b[0m 呜...走神了 ❤️\n`);
@@ -68,17 +76,17 @@ async function qqMode(pipelineCtx: Parameters<typeof processMessage>[2], config:
   const activeUsers = new Set<string>();
 
   // 消息处理回调
-  async function handleMessage(msg: QQMessage): Promise<string> {
+  async function handleMessage(msg: QQMessage): Promise<string[]> {
     activeUsers.add(msg.userId);
 
     if (msg.groupId) {
       const isAt =
         msg.content.includes(`@${p.name}`) || msg.content.includes(p.name);
-      if (!isAt) return "";
+      if (!isAt) return [];
       msg.content = msg.content
         .replace(new RegExp(`@${p.name}\\s*`), "")
         .trim();
-      if (!msg.content) return `${p.name}在这里~ 有什么事呀？`;
+      if (!msg.content) return [`${p.name}在这里~ 有什么事呀？`];
     }
 
     return processMessage(msg.userId, msg.content, pipelineCtx);
@@ -108,6 +116,48 @@ async function qqMode(pipelineCtx: Parameters<typeof processMessage>[2], config:
   });
 }
 
+// ---- 微信模式 ----
+
+async function wechatMode(pipelineCtx: Parameters<typeof processMessage>[2], config: ReturnType<typeof loadConfig>) {
+  const p = pipelineCtx.profile;
+
+  const activeUsers = new Set<string>();
+
+  async function handleMessage(msg: WeChatMessage): Promise<string[]> {
+    activeUsers.add(msg.userId);
+
+    if (msg.isGroup) {
+      const isAt = msg.content.includes(`@${p.name}`) || msg.content.includes(p.name);
+      if (!isAt) return [];
+      msg.content = msg.content.replace(new RegExp(`@${p.name}\\s*`), "").trim();
+      if (!msg.content) return [`${p.name}在这里~ 有什么事呀？`];
+    }
+
+    return processMessage(msg.userId, msg.content, pipelineCtx);
+  }
+
+  const wx = startWeChat(config.wechat, handleMessage);
+
+  startScheduler({
+    profile: p,
+    getActiveUsers: () => [...activeUsers],
+    sendMessage: async (_userId: string, message: string) => {
+      logger.info(`定时消息: ${message.slice(0, 40)}`);
+    },
+  });
+
+  process.on("SIGINT", () => {
+    logger.info("正在关闭...");
+    wx.stop();
+    process.exit(0);
+  });
+  process.on("SIGTERM", () => {
+    logger.info("正在关闭...");
+    wx.stop();
+    process.exit(0);
+  });
+}
+
 // ---- 主入口 ----
 
 async function main() {
@@ -132,8 +182,14 @@ async function main() {
 
   // 终端模式
   if (process.argv.includes("--terminal")) {
-    setLogLevel("warn"); // 终端模式减少日志干扰
+    setLogLevel("warn");
     return terminalMode(pipelineCtx);
+  }
+
+  // 微信模式优先（如果配置了）
+  if (config.wechat.baseUrl) {
+    logger.info(`微信服务地址: ${config.wechat.baseUrl}`);
+    return wechatMode(pipelineCtx, config);
   }
 
   // QQ 模式

@@ -6,9 +6,9 @@
  * 遗忘曲线: 不是无限完美记忆 — 久了不提就忘了
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { ROOT } from "./config.js";
+import { getDataRoot, writeFileAtomic } from "./config.js";
 import { logger, retry } from "./utils.js";
 
 // ---- 类型 ----
@@ -39,15 +39,16 @@ export interface MemoryContext {
   mediumConfidence: string[];
 }
 
-// ---- 短期记忆 ----
+// ---- 路径工具 ----
 
-const DATA_DIR = resolve(ROOT, "data");
-const CONV_DIR = resolve(DATA_DIR, "conversations");
-const LTM_PATH = resolve(DATA_DIR, "long-term-memory.json");
+function convDir() { return resolve(getDataRoot(), "data", "conversations"); }
+function ltmPath() { return resolve(getDataRoot(), "data", "long-term-memory.json"); }
+function learnedPath() { return resolve(getDataRoot(), "data", "learned-interests.json"); }
 
 /** 确保数据目录存在 */
 function ensureDirs() {
-  if (!existsSync(CONV_DIR)) mkdirSync(CONV_DIR, { recursive: true });
+  const dir = convDir();
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
 /**
@@ -56,13 +57,12 @@ function ensureDirs() {
  */
 export function loadShortTerm(userId: string, maxTurns: number): ConversationTurn[] {
   ensureDirs();
-  const filePath = resolve(CONV_DIR, `${userId}.json`);
+  const filePath = resolve(convDir(), `${userId}.json`);
   if (!existsSync(filePath)) return [];
 
   try {
     const raw = readFileSync(filePath, "utf-8");
     const history: ConversationTurn[] = JSON.parse(raw);
-    // 只保留最近 N*2 条消息（N 轮 = 2N 条消息）
     return history.slice(-maxTurns * 2);
   } catch {
     logger.warn(`读取 ${userId} 对话历史失败，从头开始`);
@@ -75,14 +75,11 @@ export function loadShortTerm(userId: string, maxTurns: number): ConversationTur
  */
 export function saveShortTerm(userId: string, userMsg: string, assistantMsg: string) {
   ensureDirs();
-  const history = loadShortTerm(userId, 9999); // 加载全部
-
+  const history = loadShortTerm(userId, 9999);
   const now = new Date().toISOString();
   history.push({ role: "user", content: userMsg, timestamp: now });
   history.push({ role: "assistant", content: assistantMsg, timestamp: now });
-
-  const filePath = resolve(CONV_DIR, `${userId}.json`);
-  writeFileSync(filePath, JSON.stringify(history, null, 2), "utf-8");
+  writeFileAtomic(resolve(convDir(), `${userId}.json`), JSON.stringify(history, null, 2));
 }
 
 /**
@@ -103,11 +100,11 @@ export function buildMessageHistory(
 
 /** 加载长期记忆 */
 export function loadLongTerm(): LongTermMemory {
-  if (!existsSync(LTM_PATH)) {
+  if (!existsSync(ltmPath())) {
     return { facts: [], lastUpdated: new Date().toISOString() };
   }
   try {
-    return JSON.parse(readFileSync(LTM_PATH, "utf-8")) as LongTermMemory;
+    return JSON.parse(readFileSync(ltmPath(), "utf-8")) as LongTermMemory;
   } catch {
     return { facts: [], lastUpdated: new Date().toISOString() };
   }
@@ -116,7 +113,7 @@ export function loadLongTerm(): LongTermMemory {
 /** 保存长期记忆 */
 function saveLongTerm(memory: LongTermMemory) {
   memory.lastUpdated = new Date().toISOString();
-  writeFileSync(LTM_PATH, JSON.stringify(memory, null, 2), "utf-8");
+  writeFileAtomic(ltmPath(), JSON.stringify(memory, null, 2));
 }
 
 /**
@@ -246,8 +243,6 @@ ${conversationText}
 
 // ---- 渐进式学习（Phase 10）----
 
-const LEARNED_PATH = resolve(DATA_DIR, "learned-interests.json");
-
 export interface LearnedInterest {
   topic: string;
   herAngle: string;
@@ -262,11 +257,11 @@ export interface LearnedInterests {
 
 /** 加载已学习的兴趣 */
 export function loadLearnedInterests(): LearnedInterests {
-  if (!existsSync(LEARNED_PATH)) {
+  if (!existsSync(learnedPath())) {
     return { interests: [], rejected: [] };
   }
   try {
-    return JSON.parse(readFileSync(LEARNED_PATH, "utf-8")) as LearnedInterests;
+    return JSON.parse(readFileSync(learnedPath(), "utf-8")) as LearnedInterests;
   } catch {
     return { interests: [], rejected: [] };
   }
@@ -274,7 +269,7 @@ export function loadLearnedInterests(): LearnedInterests {
 
 /** 保存学习到的兴趣 */
 function saveLearnedInterests(data: LearnedInterests) {
-  writeFileSync(LEARNED_PATH, JSON.stringify(data, null, 2), "utf-8");
+  writeFileAtomic(learnedPath(), JSON.stringify(data, null, 2));
 }
 
 /**

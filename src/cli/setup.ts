@@ -9,10 +9,12 @@
 import * as readline from "node:readline";
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { Profile, CustomStyle, UserGender, RelationshipType, RelationshipMode } from "./config.js";
-import { createRelationshipState } from "./relationship.js";
+import { fileURLToPath } from "node:url";
+import type { Profile, CustomStyle, UserGender, RelationshipType, RelationshipMode } from "../core/config.js";
+import { createRelationshipState } from "../core/relationship.js";
 
-const ROOT = resolve(import.meta.dirname, "..");
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const ROOT = resolve(__dirname, "..", "..");
 const DATA_DIR = resolve(ROOT, "data");
 
 // ---- readline 包装 ----
@@ -54,7 +56,7 @@ function showDone() {
 // ---- 解析用户自由描述 → 结构化角色卡 ----
 // 简单关键词提取，不依赖 LLM 也能跑
 
-function parseDescription(raw: string): Partial<Profile> {
+export function parseDescription(raw: string): Partial<Profile> {
   const result: Partial<Profile> = {
     hobbies: [],
     quirks: [],
@@ -325,19 +327,37 @@ async function main() {
   }
 
   // 替换或追加 AI 配置
-  envContent = envContent
-    .replace(/^AI_PROVIDER=.*/m, `AI_PROVIDER=${aiProvider}`)
-    .replace(/^AI_MODEL=.*/m, `AI_MODEL=${aiProvider === "anthropic" ? "claude-sonnet-4-20250514" : "gpt-4o"}`)
-    .replace(/^AI_API_KEY=.*/m, `AI_API_KEY=${apiKey}`)
-    .replace(/^QQ_WS_URL=.*/m, `QQ_WS_URL=${qqWs}`)
-    .replace(/^QQ_ACCESS_TOKEN=.*/m, `QQ_ACCESS_TOKEN=${qqToken}`);
+  const modelMap: Record<string, string> = {
+    anthropic: "claude-sonnet-4-20250514",
+    openai: "gpt-4o",
+    "openai-compatible": "deepseek-chat",
+  };
 
-  writeFileSync(envPath, envContent, "utf-8");
+  const envLines: string[] = envContent.split("\n");
+  const setOrAppend = (key: string, value: string) => {
+    const idx = envLines.findIndex((line) => line.startsWith(`${key}=`));
+    if (idx >= 0) {
+      envLines[idx] = `${key}=${value}`;
+    } else {
+      envLines.push(`${key}=${value}`);
+    }
+  };
+
+  setOrAppend("AI_PROVIDER", aiProvider);
+  setOrAppend("AI_MODEL", modelMap[aiProvider] || "gpt-4o");
+  setOrAppend("AI_API_KEY", apiKey);
+  setOrAppend("QQ_WS_URL", qqWs);
+  setOrAppend("QQ_ACCESS_TOKEN", qqToken);
+
+  writeFileSync(envPath, envLines.join("\n"), "utf-8");
 
   showDone();
 }
 
-main().catch((err) => {
-  console.error("设置出错:", err);
-  process.exit(1);
-});
+const isDirectRun = process.argv[1]?.includes("setup");
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error("设置出错:", err);
+    process.exit(1);
+  });
+}

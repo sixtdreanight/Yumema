@@ -6,8 +6,8 @@
  */
 
 import { WebSocket } from "ws";
-import type { QQConfig } from "./config.js";
-import { logger } from "./utils.js";
+import type { QQConfig } from "../core/config.js";
+import { logger } from "../core/utils.js";
 
 // ---- 类型 ----
 
@@ -53,9 +53,11 @@ export interface QQMessage {
   messageId?: number;
 }
 
-export type MessageHandler = (msg: QQMessage) => Promise<string>;
+export type MessageHandler = (msg: QQMessage) => Promise<string[]>;
 
 // ---- 消息处理 ----
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** 从 OneBot 消息段数组中提取纯文本 */
 function extractText(segments: MsgSegment[]): string {
@@ -155,12 +157,22 @@ export function startOneBot(
     );
 
     try {
-      const reply = await handler(msg);
+      const replies = await handler(msg);
 
-      if (msg.groupId && reply) {
-        sendGroupMsg(String(msg.groupId), reply);
-      } else if (reply) {
-        sendPrivateMsg(msg.userId, reply);
+      if (replies.length === 0) return;
+
+      // 逐条发送，模拟微信聊天节奏
+      const isGroup = !!msg.groupId;
+      const targetId = isGroup ? String(msg.groupId) : msg.userId;
+
+      for (let i = 0; i < replies.length; i++) {
+        if (!replies[i]) continue;
+        if (i > 0) {
+          // 段间延迟 600~1200ms，模拟打字/思考时间
+          const delay = 600 + Math.random() * 600;
+          await sleep(delay);
+        }
+        isGroup ? sendGroupMsg(targetId, replies[i]) : sendPrivateMsg(targetId, replies[i]);
       }
     } catch (err) {
       logger.error("处理消息失败:", err);

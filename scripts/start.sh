@@ -33,7 +33,7 @@ fi
 if [ ! -f data/profile.json ]; then
   echo "📝 未找到角色卡，进入设置向导..."
   echo ""
-  npx tsx src/setup.ts
+  npx tsx src/cli/setup.ts
   echo ""
 fi
 
@@ -41,9 +41,9 @@ fi
 if grep -q "your_api_key_here" .env 2>/dev/null; then
   echo "⚠️  .env 中的 API Key 未配置，终端聊天模式启动"
   echo ""
-  exec npx tsx src/index.ts --terminal
+  exec npx tsx src/cli/index.ts --terminal
 fi
 
 # 正常启动
 echo "🚀 启动中..."
-exec npx tsx src/index.ts
+exec npx tsx src/cli/index.ts

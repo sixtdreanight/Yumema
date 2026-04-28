@@ -1,5 +1,6 @@
 node_modules/
 dist/
+release/
 .env
 data/conversations/
 data/long-term-memory.json

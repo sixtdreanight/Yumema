@@ -1,0 +1,71 @@
+appId: com.vpartner.app
+productName: V-Partner
+copyright: Copyright (c) 2026
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - package.json
+
+extraResources:
+  - from: data/
+    to: data/
+    filter:
+      - "**/*"
+
+mac:
+  category: public.app-category.social-networking
+  icon: resources/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+
+win:
+  icon: resources/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  license: LICENSE
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+
+linux:
+  icon: resources/icon.png
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  category: Network
+  maintainer: V-Partner Team <erk163@163.com>
+  description: V-Partner — AI companion desktop app
+
+afterSign: scripts/notarize.js
+
+publish:
+  provider: github
+  owner: dreamnight
+  repo: v-partner

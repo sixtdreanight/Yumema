@@ -71,6 +71,42 @@ export function createAIProvider(config: AppConfig["ai"]): LanguageModel {
   return openai.chat(model);
 }
 
+// ---- 消息拆分 ----
+
+/**
+ * 将长文本按句子边界拆成短段落，模拟微信聊天风格
+ * 每段控制在 80 字以内，在句号/问号/感叹号处自然断开
+ */
+export function splitForChat(text: string): string[] {
+  if (!text || text.length === 0) return [""];
+
+  // 按句子结束标点拆分
+  const sentences = text
+    .split(/(?<=[。！？…\.!\?～~\n])\s*/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (sentences.length === 0) return [text];
+  if (sentences.length === 1 && sentences[0].length <= 80) return sentences;
+
+  // 合并短句，保持每段不超过 80 字
+  const result: string[] = [];
+  let current = sentences[0];
+
+  for (let i = 1; i < sentences.length; i++) {
+    const next = sentences[i];
+    if ((current + next).length <= 80) {
+      current += next;
+    } else {
+      result.push(current);
+      current = next;
+    }
+  }
+  result.push(current);
+
+  return result.length > 0 ? result : [text];
+}
+
 // ---- 管道 ----
 
 export interface PipelineContext {
@@ -101,14 +137,14 @@ export async function processMessage(
   userId: string,
   userMessage: string,
   ctx: PipelineContext,
-): Promise<string> {
+): Promise<string[]> {
   const { model, config, profile } = ctx;
   const nick = profile.user_nickname;
 
   // 快捷保存并返回（确保所有路径都保存对话记录）
-  const saveAndReturn = (reply: string) => {
+  const saveAndReturn = (reply: string): string[] => {
     saveShortTerm(userId, userMessage, reply);
-    return reply;
+    return splitForChat(reply);
   };
 
   // 1. 安全检查 — 输入层
@@ -121,7 +157,7 @@ export async function processMessage(
   const relState = getOrCreateState(profile.relationship_mode);
 
   // 用户告白
-  if (/^(告白|表白|我喜欢你|我爱你|在一起|做我(女朋友|男朋友)|交往)/.test(userMessage)) {
+  if (/(告白|表白|我喜欢你|我爱你|在一起|做我(女朋友|男朋友)|交往)/.test(userMessage)) {
     if (relState.stage === "lover") {
       return saveAndReturn(`${profile.user_nickname}...我们不是早就在一起了吗？傻瓜~ ❤️`);
     }
@@ -144,7 +180,7 @@ export async function processMessage(
   }
 
   // 用户选择删好友（告白失败后）
-  if (/^删好友/.test(userMessage)) {
+  if (/删好友/.test(userMessage)) {
     if (relState.breakupPending) {
       executeBreakup(relState);
       return saveAndReturn("好的...那就这样吧。再见。");
@@ -158,7 +194,7 @@ export async function processMessage(
     return saveAndReturn("你确定要删除我吗？这之后我们就不会再聊天了。如果确定的话，再发一次「确认删除」。");
   }
 
-  if (/^确认删除/.test(userMessage)) {
+  if (/确认删除/.test(userMessage)) {
     executeBreakup(relState);
     return saveAndReturn("好的。祝你一切都好。再见。");
   }
@@ -176,7 +212,7 @@ export async function processMessage(
   }
 
   // 用户选择分手/挽回
-  if (/^(分手|分手吧|结束吧|我们不合适|我们分手)/.test(userMessage)) {
+  if (/(分手|分手吧|结束吧|我们不合适|我们分手)/.test(userMessage)) {
     if (relState.breakupPending) {
       return saveAndReturn(
         "我尊重你的决定。分手之后我们可以选择继续做朋友，或者就此告别。\n\n" +
@@ -187,19 +223,19 @@ export async function processMessage(
     return saveAndReturn(`${profile.user_nickname}...你真的想好了吗？如果只是一时冲动，我们可以好好聊聊。如果你真的决定了，我会尊重你。但请再确认一次——发送「我确定要分手」。`);
   }
 
-  if (/^我确定要分手/.test(userMessage)) {
+  if (/我确定要分手/.test(userMessage)) {
     return saveAndReturn(
       "好。谢谢我们曾经拥有过的时光。\n\n" +
       "发送「做朋友」保持联系 / 发送「删好友」彻底告别"
     );
   }
 
-  if (/^做朋友/.test(userMessage) && relState.breakupPending) {
+  if (/做朋友/.test(userMessage) && relState.breakupPending) {
     stayFriends(relState);
     return saveAndReturn("好...做朋友也好。谢谢你。我们重新开始吧，以朋友的身份。");
   }
 
-  if (/^我改/.test(userMessage) && relState.breakupPending) {
+  if (/我改/.test(userMessage) && relState.breakupPending) {
     relState.breakupPending = false;
     relState.boundaryWarnings = Math.max(0, relState.boundaryWarnings - 1);
     saveRelationshipState(relState);
@@ -317,8 +353,7 @@ export async function processMessage(
     }
   }
 
-  // 12. 保存记忆
-  saveShortTerm(userId, userMessage, reply);
+  // 12. 保存记忆已在 saveAndReturn 中完成
 
   // 13. 简易长期记忆
   if (userMessage.length > 30) {
@@ -338,7 +373,7 @@ export async function processMessage(
     }
   }
 
-  return reply;
+  return splitForChat(reply);
 }
 
 /**
@@ -351,7 +386,8 @@ async function generateRefusal(
 ): Promise<string> {
   try {
     const refusalPrompt = buildRefusalPrompt(profile.user_nickname, reason);
-    const context = `${profile.name}是一个${profile.age}岁${profile.temperament}的女生。${refusalPrompt}\n\n请用${profile.name}的身份自然地回复用户。`;
+    const genderLabel = profile.relationship_type === "boyfriend" ? "男生" : "女生";
+    const context = `${profile.name}是一个${profile.age}岁${profile.temperament}的${genderLabel}。${refusalPrompt}\n\n请用${profile.name}的身份自然地回复用户。`;
 
     const result = await generateText({
       model,

@@ -206,9 +206,7 @@ export function buildSystemPrompt(
   session?: SessionState,
 ): string {
   const uPronoun = userPronoun(profile.user_gender);
-  const pPronoun = partnerPronoun(profile.relationship_type);
   const pLabel = partnerLabel(profile.relationship_type);
-  const pRole = roleWord(profile.relationship_type);
 
   const parts: string[] = [];
 
@@ -446,7 +444,7 @@ export function suggestTopic(
 // ---- 情绪支持 ----
 
 export function buildEmotionalSupportHint(userNickname: string): string {
-  return `\n\n${userNickname}现在好像心情不太好。先倾听和接纳${userNickname === "宝贝" ? "他" : "TA"}的情绪，不要急着给建议。让${userNickname === "宝贝" ? "他" : "TA"}感到被理解。如果需要的话，帮${userNickname === "宝贝" ? "他" : "TA"}梳理一下困扰的事情。`;
+  return `\n\n${userNickname}现在好像心情不太好。先倾听和接纳${userNickname}的情绪，不要急着给建议。让${userNickname}感到被理解。如果需要的话，帮${userNickname}梳理一下困扰的事情。`;
 }
 
 export function buildCrisisHint(userNickname: string): string {

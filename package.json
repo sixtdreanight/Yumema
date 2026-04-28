@@ -1,27 +1,51 @@
 {
   "name": "v-partner",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "private": true,
   "type": "module",
+  "main": "dist/main/index.js",
   "scripts": {
-    "start": "npx tsx src/index.ts",
-    "setup": "npx tsx src/setup.ts"
+    "start": "npx tsx src/cli/index.ts",
+    "setup": "npx tsx src/cli/setup.ts",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win",
+    "package:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/openai": "^3.0.53",
     "ai": "^6.0.168",
     "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.3",
+    "lchwxbot": "^0.0.23",
     "node-cron": "^3.0.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2",
     "ws": "^8.18.0",
     "yaml": "^2.7.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@electron/notarize": "^3.1.1",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/node": "^22.0.0",
     "@types/node-cron": "^3.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.5.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "tailwindcss": "^4.2.4",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vite": "^7.3.2"
   }
 }

@@ -8,9 +8,9 @@
  * 分手只在用户严重越线且屡次提醒无果时才会发生。
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { ROOT } from "./config.js";
+import { getDataRoot, writeFileAtomic } from "./config.js";
 import type { RelationshipMode, RelationshipStage } from "./config.js";
 import { logger } from "./utils.js";
 
@@ -47,7 +47,7 @@ export interface ConfessionRecord {
 
 // ---- 常量 ----
 
-const RELATIONSHIP_PATH = resolve(ROOT, "data", "relationship.json");
+function relationshipPath() { return resolve(getDataRoot(), "data", "relationship.json"); }
 
 /** 告白成功的最低好感度 */
 const CONFESSION_THRESHOLD = 40;
@@ -91,9 +91,9 @@ export function createRelationshipState(mode: RelationshipMode): RelationshipSta
 
 /** 加载关系状态 */
 export function loadRelationshipState(): RelationshipState | null {
-  if (!existsSync(RELATIONSHIP_PATH)) return null;
+  if (!existsSync(relationshipPath())) return null;
   try {
-    return JSON.parse(readFileSync(RELATIONSHIP_PATH, "utf-8")) as RelationshipState;
+    return JSON.parse(readFileSync(relationshipPath(), "utf-8")) as RelationshipState;
   } catch {
     return null;
   }
@@ -101,7 +101,7 @@ export function loadRelationshipState(): RelationshipState | null {
 
 /** 保存关系状态 */
 export function saveRelationshipState(state: RelationshipState) {
-  writeFileSync(RELATIONSHIP_PATH, JSON.stringify(state, null, 2), "utf-8");
+  writeFileAtomic(relationshipPath(), JSON.stringify(state, null, 2));
 }
 
 /** 获取或初始化关系状态 */
@@ -349,8 +349,6 @@ export function buildStageGuidance(
   if (state.mode === "direct" || state.stage === "lover") return "";
 
   const { name, user_nickname } = profile;
-  const pronoun = state.stage; // 仅用于判断
-
   const guidances: Record<RelationshipStage, string> = {
     stranger: [
       `## 当前关系阶段: 刚认识`,

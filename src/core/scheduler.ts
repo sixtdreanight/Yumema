@@ -92,22 +92,11 @@ export function startScheduler(tasks: ScheduledTasks) {
     applyForgettingCurve();
   });
 
-  // 渐进式兴趣学习 — 每 6 小时运行一次
+  // 渐进式兴趣学习 — 每 6 小时运行一次（由 pipeline 层实际触发分析，scheduler 仅做标记）
   cron.schedule("0 */6 * * *", async () => {
     const users = getActiveUsers();
     if (users.length === 0) return;
-
-    // 取第一个活跃用户（个人项目通常只有一个用户）
-    const userId = users[0];
-
-    try {
-      const { analyzeUserInterests } = await import("./memory.js");
-      // 需要一个轻量的 generateText — 这里用简单的标记
-      // 实际运行由 pipeline 层触发，scheduler 只做标记
-      logger.debug("兴趣分析标记");
-    } catch (err) {
-      logger.warn("兴趣分析失败:", err);
-    }
+    logger.debug("兴趣学习定时任务触发（分析由 pipeline 层执行）");
   });
 
   logger.info("定时任务已启动 (早安8:37 / 晚安22:17 / 午后15:47 / 记忆维护3:00 / 兴趣学习每6h)");

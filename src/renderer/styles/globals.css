@@ -1,0 +1,247 @@
+@import "tailwindcss";
+
+/* ===== Design Tokens ===== */
+:root {
+  --vp-primary: #7c3aed;
+  --vp-primary-light: #a78bfa;
+  --vp-primary-dim: #5b21b6;
+  --vp-primary-soft: #ede9fe;
+  --vp-accent: #6366f1;
+  --vp-accent-light: #818cf8;
+  --vp-rose: #f43f5e;
+  --vp-amber: #f59e0b;
+
+  --vp-bg: #fafafa;
+  --vp-bg-secondary: #f4f4f5;
+  --vp-surface: #ffffff;
+  --vp-surface-hover: #f8f8fa;
+  --vp-surface-active: #f0f0f3;
+
+  --vp-border: #e4e4e7;
+  --vp-border-light: #f0f0f2;
+  --vp-border-hover: #d4d4d8;
+
+  --vp-text: #18181b;
+  --vp-text-secondary: #52525b;
+  --vp-text-muted: #a1a1aa;
+  --vp-text-inverse: #ffffff;
+
+  --vp-success: #10b981;
+  --vp-success-soft: #ecfdf5;
+  --vp-warning: #f59e0b;
+  --vp-warning-soft: #fffbeb;
+  --vp-error: #ef4444;
+  --vp-error-soft: #fef2f2;
+
+  --vp-radius-xs: 6px;
+  --vp-radius-sm: 8px;
+  --vp-radius-md: 12px;
+  --vp-radius-lg: 16px;
+  --vp-radius-xl: 20px;
+  --vp-radius-2xl: 24px;
+
+  --vp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --vp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --vp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --vp-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --vp-shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.1);
+
+  --vp-blur: 12px;
+  --vp-font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --vp-font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --vp-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --vp-transition-spring: 350ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vp-bg: #09090b;
+    --vp-bg-secondary: #121214;
+    --vp-surface: #18181b;
+    --vp-surface-hover: #202024;
+    --vp-surface-active: #27272a;
+
+    --vp-border: #27272a;
+    --vp-border-light: #1f1f23;
+    --vp-border-hover: #3f3f46;
+
+    --vp-text: #fafafa;
+    --vp-text-secondary: #a1a1aa;
+    --vp-text-muted: #71717a;
+
+    --vp-primary-soft: #1e1345;
+    --vp-success-soft: #022c22;
+    --vp-warning-soft: #291800;
+    --vp-error-soft: #1c0303;
+
+    --vp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --vp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --vp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --vp-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --vp-shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* ===== Base ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--vp-font);
+  background: var(--vp-bg);
+  color: var(--vp-text);
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--vp-border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-text-muted);
+}
+
+/* ===== Focus ring ===== */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--vp-primary-light);
+  outline-offset: 2px;
+}
+
+/* ===== Selection ===== */
+::selection {
+  background: var(--vp-primary-soft);
+  color: var(--vp-primary);
+}
+
+/* ===== Glass utility ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(var(--vp-blur));
+  -webkit-backdrop-filter: blur(var(--vp-blur));
+}
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: rgba(24, 24, 27, 0.7);
+  }
+}
+
+/* ===== Gradient text ===== */
+.gradient-text {
+  background: linear-gradient(135deg, var(--vp-primary), var(--vp-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Gradient line ===== */
+.gradient-line {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--vp-primary-light),
+    var(--vp-accent-light),
+    transparent
+  );
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}
+
+.fade-in { animation: fadeIn var(--vp-transition) ease-out; }
+.slide-up { animation: slideUp 350ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+.slide-in-left { animation: slideInLeft 250ms ease-out; }
+.slide-in-right { animation: slideInRight 250ms ease-out; }
+.scale-in { animation: scaleIn 250ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+.page-enter { animation: fadeIn 350ms ease-out, scaleIn 400ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+/* ===== Bounce dots (typing indicator) ===== */
+.bounce-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vp-text-muted);
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+.bounce-dot:nth-child(1) { animation-delay: -0.32s; }
+.bounce-dot:nth-child(2) { animation-delay: -0.16s; }
+
+/* ===== Shimmer loading ===== */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--vp-border-light) 0%,
+    var(--vp-border) 40%,
+    var(--vp-border-light) 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===== Pulse ring (for online indicator) ===== */
+.pulse-ring {
+  animation: pulse-ring 2s infinite;
+}
