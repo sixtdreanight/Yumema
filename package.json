@@ -22,7 +22,6 @@
     "ai": "^6.0.168",
     "dotenv": "^17.4.2",
     "electron-updater": "^6.8.3",
-    "lchwxbot": "^0.0.23",
     "node-cron": "^3.0.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
