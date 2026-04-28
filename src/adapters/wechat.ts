@@ -35,6 +35,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 export function startWeChat(
   config: WeChatConfig,
   handler: WeChatHandler,
+  opts?: { onQRCode?: (qrUrl: string) => void },
 ): { stop: () => void } {
   let running = true;
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -53,6 +54,7 @@ export function startWeChat(
         logger.info("微信已登录，token 已获取");
       } else if (loginData.qrUrl) {
         logger.info(`请扫描微信登录二维码: ${loginData.qrUrl}`);
+        opts?.onQRCode?.(loginData.qrUrl);
       }
 
       // 2. 开始轮询消息

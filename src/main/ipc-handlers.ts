@@ -57,72 +57,86 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("setup:save-profile", (_, data: Record<string, unknown>) => {
-    const root = getDataRoot();
-    const dDir = resolve(root, "data");
-    if (!existsSync(dDir)) mkdirSync(dDir, { recursive: true });
+    try {
+      const root = getDataRoot();
+      const dDir = resolve(root, "data");
+      if (!existsSync(dDir)) mkdirSync(dDir, { recursive: true });
 
-    const profile = data.profile;
-    const relationshipMode = (profile as Record<string, string>).relationship_mode || "direct";
+      const profile = data.profile;
+      if (!profile || typeof profile !== "object") {
+        return { success: false, error: "profile 数据无效" };
+      }
+      const relationshipMode = (profile as Record<string, string>).relationship_mode || "direct";
 
-    writeFileAtomic(
-      resolve(dDir, "profile.json"),
-      JSON.stringify(profile, null, 2),
-    );
+      const profilePath = resolve(dDir, "profile.json");
+      writeFileAtomic(profilePath, JSON.stringify(profile, null, 2));
 
-    writeFileAtomic(
-      resolve(dDir, "relationship.json"),
-      JSON.stringify(createRelationshipState(relationshipMode as "direct" | "slow_burn"), null, 2),
-    );
+      // 验证写入：立即读回确认文件存在且内容非空
+      if (!existsSync(profilePath)) {
+        return { success: false, error: "profile.json 写入后验证失败：文件不存在" };
+      }
 
-    // 持久化 AI / QQ / WeChat 配置到 .env
-    const ai = data.ai as Record<string, string> | undefined;
-    const qq = data.qq as Record<string, string> | undefined;
-    const wechat = data.wechat as Record<string, string> | undefined;
-    if (ai || qq || wechat) {
-      writeEnvFile({
-        ai: ai ? {
-          provider: ai.provider as AIConfig["provider"],
-          model: ai.model,
-          apiKey: ai.apiKey,
-          baseUrl: ai.baseUrl,
-        } : undefined,
-        qq: qq ? {
-          wsUrl: qq.wsUrl,
-          accessToken: qq.accessToken,
-        } : undefined,
-        wechat: wechat ? {
-          baseUrl: wechat.baseUrl,
-          fileUrl: wechat.fileUrl,
-          token: wechat.token,
-          appid: wechat.appid,
-        } : undefined,
-      });
+      writeFileAtomic(
+        resolve(dDir, "relationship.json"),
+        JSON.stringify(createRelationshipState(relationshipMode as "direct" | "slow_burn"), null, 2),
+      );
+
+      // 持久化 AI / QQ / WeChat 配置到 .env
+      const ai = data.ai as Record<string, string> | undefined;
+      const qq = data.qq as Record<string, string> | undefined;
+      const wechat = data.wechat as Record<string, string> | undefined;
+      if (ai || qq || wechat) {
+        writeEnvFile({
+          ai: ai ? {
+            provider: ai.provider as AIConfig["provider"],
+            model: ai.model,
+            apiKey: ai.apiKey,
+            baseUrl: ai.baseUrl,
+          } : undefined,
+          qq: qq ? {
+            wsUrl: qq.wsUrl,
+            accessToken: qq.accessToken,
+          } : undefined,
+          wechat: wechat ? {
+            baseUrl: wechat.baseUrl,
+            fileUrl: wechat.fileUrl,
+            token: wechat.token,
+            appid: wechat.appid,
+          } : undefined,
+        });
+      }
+
+      // 延迟到首次聊天时初始化 pipeline，避免 setup 阶段因配置异常导致 IPC 卡死
+      pipelineCtx = null;
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: `保存失败: ${err instanceof Error ? err.message : String(err)}` };
     }
-
-    pipelineCtx = createPipelineContext();
-
-    return { success: true };
   });
 
   // ---- 聊天 ----
   ipcMain.handle("chat:send", async (_, message: string) => {
-    if (!pipelineCtx) pipelineCtx = createPipelineContext();
-    const userId = "gui-user";
-    const replies = await processMessage(userId, message, pipelineCtx);
+    try {
+      if (!pipelineCtx) pipelineCtx = createPipelineContext();
+      const userId = "gui-user";
+      const replies = await processMessage(userId, message, pipelineCtx);
 
-    // 逐条推送到渲染进程
-    const w = win();
-    if (w) {
-      for (let i = 0; i < replies.length; i++) {
-        w.webContents.send("chat:reply-chunk", {
-          index: i,
-          total: replies.length,
-          text: replies[i],
-        });
+      const w = win();
+      if (w) {
+        for (let i = 0; i < replies.length; i++) {
+          w.webContents.send("chat:reply-chunk", {
+            index: i,
+            total: replies.length,
+            text: replies[i],
+          });
+        }
       }
-    }
 
-    return replies;
+      return replies;
+    } catch (err) {
+      return [`抱歉，出了点问题: ${err instanceof Error ? err.message : "未知错误"}`];
+    }
   });
 
   ipcMain.handle("chat:load-history", (_, limit?: number) => {

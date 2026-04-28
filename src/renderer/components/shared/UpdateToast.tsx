@@ -48,32 +48,38 @@ export default function UpdateToast() {
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 fade-in">
-      <div className="glass rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-lg px-5 py-3 flex items-center gap-4 min-w-[320px]">
+      <div
+        className="glass rounded-2xl shadow-lg px-5 py-3 flex items-center gap-4 min-w-[320px]"
+        style={{ border: "1px solid var(--vp-border)" }}
+      >
         <div className="flex-1">
           {status === "available" && (
             <div className="text-sm">
-              <span className="font-medium text-zinc-800 dark:text-zinc-100">发现新版本</span>
-              <span className="text-zinc-500 dark:text-zinc-400 ml-1">v{version}</span>
+              <span className="font-medium" style={{ color: "var(--vp-text)" }}>发现新版本</span>
+              <span className="ml-1" style={{ color: "var(--vp-text-muted)" }}>v{version}</span>
             </div>
           )}
           {status === "downloading" && (
             <div className="text-sm">
-              <span className="text-zinc-600 dark:text-zinc-300">正在下载更新… {progress}%</span>
-              <div className="mt-1.5 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+              <span style={{ color: "var(--vp-text-secondary)" }}>正在下载更新… {progress}%</span>
+              <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: "var(--vp-border)" }}>
                 <div
-                  className="h-full bg-violet-500 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${progress}%`,
+                    background: "linear-gradient(to right, var(--vp-primary), var(--vp-accent))",
+                  }}
                 />
               </div>
             </div>
           )}
           {status === "downloaded" && (
-            <div className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+            <div className="text-sm font-medium" style={{ color: "var(--vp-text)" }}>
               更新已下载，重启后安装
             </div>
           )}
           {status === "error" && (
-            <div className="text-sm text-red-500">更新检查失败</div>
+            <div className="text-sm" style={{ color: "var(--vp-error)" }}>更新检查失败</div>
           )}
         </div>
 

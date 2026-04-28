@@ -38,7 +38,29 @@ export default function MessageInput({
   return (
     <div className="px-4 py-3">
       <div className="max-w-2xl mx-auto flex items-end gap-2">
-        <div className="flex-1 flex items-end rounded-2xl px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 transition-all duration-200 focus-within:border-violet-300 dark:focus-within:border-violet-600 focus-within:ring-4 focus-within:ring-violet-50 dark:focus-within:ring-violet-900/20">
+        {/* Placeholder extra actions — emoji / attachment */}
+        <button
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-200 opacity-50 hover:opacity-100"
+          style={{ color: "var(--vp-text-muted)" }}
+          title="表情"
+          disabled
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            <line x1="9" y1="9" x2="9.01" y2="9" />
+            <line x1="15" y1="9" x2="15.01" y2="9" />
+          </svg>
+        </button>
+
+        <div
+          className="flex-1 flex items-end rounded-2xl px-4 py-2.5 transition-all duration-200"
+          style={{
+            background: "var(--vp-surface)",
+            border: "1px solid var(--vp-border)",
+            boxShadow: "var(--vp-shadow-xs)",
+          }}
+        >
           <textarea
             ref={inputRef}
             value={text}
@@ -47,12 +69,13 @@ export default function MessageInput({
             placeholder="输入消息... (Enter 发送)"
             rows={1}
             disabled={disabled}
-            className="flex-1 bg-transparent text-sm outline-none resize-none text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 disabled:opacity-40 overflow-hidden"
+            className="flex-1 bg-transparent text-sm outline-none resize-none disabled:opacity-40 overflow-hidden"
             style={{
               minHeight: "1.5rem",
               maxHeight: "6rem",
               fontFamily: "var(--vp-font)",
               lineHeight: "1.6",
+              color: "var(--vp-text)",
             }}
           />
         </div>

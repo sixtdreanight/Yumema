@@ -23,7 +23,7 @@ export function useChat() {
     // 监听逐条回复
     const unsub = window.api.on("chat:reply-chunk", (data: unknown) => {
       const d = data as { text: string; index: number; total: number };
-      const now = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      const now = new Date().toISOString();
 
       // 延迟追加，模拟打字节奏
       const delay = d.index === 0 ? 0 : 600 + Math.random() * 600;
@@ -45,7 +45,7 @@ export function useChat() {
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
-    const now = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+    const now = new Date().toISOString();
 
     setMessages((prev) => [...prev, { role: "user", content, time: now }]);
     setTyping(true);

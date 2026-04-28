@@ -9,8 +9,8 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/mengyeshiliu/V-partner.git
-cd V-partner
+git clone https://github.com/sixtdreanight/V-Partner.git
+cd V-Partner
 npm install
 npm run dev
 ```

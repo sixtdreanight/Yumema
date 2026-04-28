@@ -34,7 +34,7 @@ V-Partner 是一个 AI 伴侣桌面应用。TA 有自己的性格、爱好、情
 
 ### 下载安装
 
-从 [Releases](https://github.com/mengyeshiliu/V-partner/releases) 下载对应平台安装包：
+从 [Releases](https://github.com/sixtdreanight/V-Partner/releases) 下载对应平台安装包：
 
 - **macOS**: `.dmg` (Apple Silicon / Intel)
 - **Windows**: `.exe` (NSIS 安装器)
@@ -44,8 +44,8 @@ V-Partner 是一个 AI 伴侣桌面应用。TA 有自己的性格、爱好、情
 
 ```bash
 # 前置要求：Node.js 18+
-git clone https://github.com/mengyeshiliu/V-partner.git
-cd V-partner
+git clone https://github.com/sixtdreanight/V-Partner.git
+cd V-Partner
 npm install
 
 # 开发模式

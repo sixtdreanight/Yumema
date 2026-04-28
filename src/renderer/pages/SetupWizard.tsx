@@ -25,7 +25,7 @@ const STEPS = [
 
 export default function SetupWizard() {
   const wizard = useSetupWizard();
-  const { step, progress, back, canNext, next, transitioning, error } = wizard;
+  const { step, progress, back, canNext, next, transitioning, transitionTimedOut, error, saveProfile } = wizard;
   const StepComponent = STEPS[step];
 
   if (transitioning) {
@@ -34,14 +34,23 @@ export default function SetupWizard() {
         <div className="text-center space-y-4 scale-in">
           <div
             className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
+            style={{ background: transitionTimedOut ? "#fef2f2" : "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
           >
-            <span className="text-2xl">✨</span>
+            <span className="text-2xl">{transitionTimedOut ? "⚠️" : "✨"}</span>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-zinc-700 dark:text-zinc-200">正在创建你的 AI 伴侣...</h2>
-            <p className="text-sm mt-1 text-zinc-400 dark:text-zinc-500">一切准备就绪</p>
+            <h2 className="text-base font-semibold text-zinc-700 dark:text-zinc-200">
+              {transitionTimedOut ? "启动超时" : "正在创建你的 AI 伴侣..."}
+            </h2>
+            <p className="text-sm mt-1 text-zinc-400 dark:text-zinc-500">
+              {transitionTimedOut ? "窗口切换可能未响应，请手动重试" : "一切准备就绪"}
+            </p>
           </div>
+          {transitionTimedOut && (
+            <Button variant="primary" size="sm" onClick={saveProfile}>
+              点击重试
+            </Button>
+          )}
         </div>
       </div>
     );

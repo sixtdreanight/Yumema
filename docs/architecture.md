@@ -16,7 +16,7 @@
 │  │           │          │  │                          │ │
 │  │  ┌────────┴───────┐  │  │  ┌─────────────────────┐ │ │
 │  │  │ IPC Handlers    │◄─┼──┼──┤  ChatWindow          │ │ │
-│  │  │ (10+ channels)  │  │  │  │  - MessageList       │ │ │
+│  │  │ (22 channels)  │  │  │  │  - MessageList       │ │ │
 │  │  └────────┬───────┘  │  │  │  - MessageBubble      │ │ │
 │  │           │          │  │  │  - MessageInput       │ │ │
 │  │  ┌────────┴───────┐  │  │  │  - TypingIndicator   │ │ │

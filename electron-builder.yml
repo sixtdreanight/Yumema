@@ -67,5 +67,5 @@ afterSign: scripts/notarize.js
 
 publish:
   provider: github
-  owner: dreamnight
-  repo: v-partner
+  owner: sixtdreanight
+  repo: V-Partner

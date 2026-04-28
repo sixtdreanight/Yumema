@@ -40,15 +40,18 @@ export default function ChatWindow() {
   const name = (profile?.name as string) || "V-Partner";
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 page-enter">
+    <div className="h-screen flex flex-col page-enter" style={{ background: "var(--vp-bg-chat)" }}>
       <UpdateToast />
 
       {/* Header */}
-      <header className="h-14 flex items-center justify-between px-5 shrink-0 glass border-b border-zinc-200/60 dark:border-zinc-700/60">
+      <header
+        className="h-14 flex items-center justify-between px-5 shrink-0 glass border-b"
+        style={{ borderColor: "var(--vp-separator)" }}
+      >
         <div className="flex items-center gap-3">
           <Avatar emoji="💕" size="sm" />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{name}</span>
+            <span className="text-sm font-semibold" style={{ color: "var(--vp-text)" }}>{name}</span>
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 pulse-ring" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -57,10 +60,11 @@ export default function ChatWindow() {
         </div>
 
         <div className="flex items-center gap-2">
-          <time className="text-xs text-zinc-400 dark:text-zinc-500 font-mono tabular-nums">{time}</time>
+          <time className="text-xs font-mono tabular-nums" style={{ color: "var(--vp-text-muted)" }}>{time}</time>
           <button
             onClick={() => setShowSettings(true)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ color: "var(--vp-text-muted)" }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="8" cy="8" r="2.5" />
@@ -74,7 +78,7 @@ export default function ChatWindow() {
       <MessageList messages={messages} typing={typing} messagesEndRef={messagesEndRef} />
 
       {/* Input area */}
-      <div className="shrink-0 glass border-t border-zinc-200/60 dark:border-zinc-700/60">
+      <div className="shrink-0 glass" style={{ borderTop: "1px solid var(--vp-separator)" }}>
         <div className="gradient-line" />
         <MessageInput onSend={sendMessage} disabled={typing} />
       </div>

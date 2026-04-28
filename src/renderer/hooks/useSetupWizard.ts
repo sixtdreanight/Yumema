@@ -56,6 +56,7 @@ export function useSetupWizard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [transitioning, setTransitioning] = useState(false);
+  const [transitionTimedOut, setTransitionTimedOut] = useState(false);
 
   const update = useCallback((partial: Partial<WizardData>) => {
     setData((prev) => ({ ...prev, ...partial }));
@@ -106,8 +107,10 @@ export function useSetupWizard() {
   }, [update]);
 
   const saveProfile = useCallback(async () => {
+    if (saving) return;
     setSaving(true);
     setError("");
+    setTransitionTimedOut(false);
     try {
       const profile = {
         name: data.name,
@@ -150,24 +153,31 @@ export function useSetupWizard() {
         } : undefined,
       });
 
-      if ((result as { success: boolean }).success) {
-        setTransitioning(true);
-        await window.api.transitionToChat();
-        // Brief pause so the window resize animation starts before route change
-        await new Promise((r) => setTimeout(r, 400));
-        window.location.hash = "#/chat";
-      } else {
-        setError("保存失败，请检查配置后重试");
+      const res = result as { success: boolean; error?: string };
+      if (!res.success) {
+        setError(res.error || "保存失败，请检查配置后重试");
+        return;
       }
+
+      setTransitioning(true);
+
+      // 10 秒超时：如果切换过程卡死，给用户一个退出路径
+      const timeoutId = setTimeout(() => setTransitionTimedOut(true), 10000);
+
+      await window.api.transitionToChat();
+      await new Promise((r) => setTimeout(r, 400));
+
+      clearTimeout(timeoutId);
+      window.location.hash = "#/chat";
     } catch (err) {
       setError(`保存出错: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }
-  }, [data, parsePreview]);
+  }, [data, parsePreview, saving]);
 
   return {
-    step, data, parsePreview, riskRead, saving, error, transitioning, progress,
+    step, data, parsePreview, riskRead, saving, error, transitioning, transitionTimedOut, progress,
     update, next, back, canNext, setRiskRead,
     handleDescriptionParse, saveProfile,
     totalSteps: TOTAL_STEPS,

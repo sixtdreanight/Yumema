@@ -18,7 +18,7 @@ function createWindow(startRoute: "setup" | "chat") {
     titleBarStyle: "hiddenInset",
     show: false,
     webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
+      preload: join(__dirname, "../preload/preload.mjs"),
       sandbox: false,
     },
   });
