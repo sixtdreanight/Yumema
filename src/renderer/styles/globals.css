@@ -101,7 +101,7 @@
   --vp-radius-2xl: 24px;
 
   /* IM chat tokens */
-  --vp-bubble-user: linear-gradient(135deg, #7c3aed, #6366f1);
+  --vp-bubble-user: linear-gradient(135deg, var(--primary), var(--vp-accent));
   --vp-bubble-user-text: #ffffff;
   --vp-bubble-partner: var(--card);
   --vp-bubble-partner-text: var(--foreground);
@@ -116,8 +116,8 @@
   --vp-shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.1);
 
   --vp-blur: 12px;
-  --vp-font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --vp-font: "Varela Round", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
   --vp-font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
   --vp-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --vp-transition-spring: 350ms cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -174,7 +174,9 @@ body {
   color: var(--foreground);
   overflow: hidden;
   font-size: 14px;
+  font-weight: 400;
   line-height: 1.6;
+  letter-spacing: 0.01em;
 }
 
 #root {
@@ -211,15 +213,23 @@ button:focus-visible {
 
 /* ===== Glass utility ===== */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(var(--vp-blur));
-  -webkit-backdrop-filter: blur(var(--vp-blur));
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 @media (prefers-color-scheme: dark) {
   .glass {
-    background: rgba(24, 24, 27, 0.7);
+    background: rgba(24, 24, 27, 0.75);
   }
 }
+
+/* ===== z-index layers ===== */
+.z-content  { z-index: 0; }
+.z-header   { z-index: 10; }
+.z-overlay  { z-index: 20; }
+.z-dialog   { z-index: 30; }
+.z-toast    { z-index: 40; }
+.z-system   { z-index: 50; }
 
 /* ===== Gradient text ===== */
 .gradient-text {
@@ -241,9 +251,15 @@ button:focus-visible {
   );
 }
 
+/* ===== Easing ===== */
+:root {
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ===== Animations ===== */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -263,8 +279,15 @@ button:focus-visible {
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.08); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
 }
 
 @keyframes bounce {
@@ -283,12 +306,19 @@ button:focus-visible {
   100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
 }
 
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .fade-in { animation: fadeIn var(--vp-transition) ease-out; }
-.slide-up { animation: slideUp 350ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+.slide-up { animation: slideUp 350ms var(--ease-spring); }
 .slide-in-left { animation: slideInLeft 250ms ease-out; }
 .slide-in-right { animation: slideInRight 250ms ease-out; }
-.scale-in { animation: scaleIn 250ms cubic-bezier(0.22, 0.61, 0.36, 1); }
-.page-enter { animation: fadeIn 350ms ease-out, scaleIn 400ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+.scale-in { animation: scaleIn 350ms var(--ease-spring); }
+.bounce-in { animation: bounceIn 500ms var(--ease-spring); }
+.float-up { animation: floatUp 400ms var(--ease-spring); }
+.page-enter { animation: fadeIn 350ms ease-out, scaleIn 450ms var(--ease-spring); }
 
 /* ===== Bounce dots (typing indicator) ===== */
 .bounce-dot {

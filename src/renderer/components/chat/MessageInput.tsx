@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, type KeyboardEvent } from "react";
-import { Smile } from "lucide-react";
+import { Send } from "lucide-react";
 
 export default function MessageInput({
   onSend, disabled,
@@ -38,58 +38,34 @@ export default function MessageInput({
 
   return (
     <div className="px-4 py-3">
-      <div className="max-w-2xl mx-auto flex items-end gap-2">
-        <button
-          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-200 opacity-40 hover:opacity-100 text-muted-foreground"
-          title="表情"
-          disabled
-        >
-          <Smile className="w-[18px] h-[18px]" />
-        </button>
-
-        <div
-          className="flex-1 flex items-end rounded-2xl px-4 py-2.5 transition-all duration-200"
+      <div className="max-w-2xl mx-auto flex items-end glass rounded-3xl px-4 py-2.5 border border-border">
+        <textarea
+          ref={inputRef}
+          value={text}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder="输入消息... (Enter 发送)"
+          rows={1}
+          disabled={disabled}
+          className="flex-1 bg-transparent text-sm outline-none resize-none disabled:opacity-40 overflow-hidden"
           style={{
-            background: "var(--vp-surface)",
-            border: "1px solid var(--vp-border)",
-            boxShadow: "var(--vp-shadow-xs)",
+            minHeight: "1.5rem",
+            maxHeight: "6rem",
+            fontFamily: "var(--vp-font)",
+            lineHeight: "1.6",
+            color: "var(--vp-text)",
           }}
-        >
-          <textarea
-            ref={inputRef}
-            value={text}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder="输入消息... (Enter 发送)"
-            rows={1}
-            disabled={disabled}
-            className="flex-1 bg-transparent text-sm outline-none resize-none disabled:opacity-40 overflow-hidden"
-            style={{
-              minHeight: "1.5rem",
-              maxHeight: "6rem",
-              fontFamily: "var(--vp-font)",
-              lineHeight: "1.6",
-              color: "var(--vp-text)",
-            }}
-          />
-        </div>
-
+        />
         <button
           onClick={handleSend}
           disabled={!canSend}
-          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90"
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90 ml-2"
           style={{
-            background: canSend
-              ? "linear-gradient(135deg, var(--vp-primary), var(--vp-accent))"
-              : "var(--vp-border-light)",
-            boxShadow: canSend ? "0 2px 8px rgba(124, 58, 237, 0.3)" : "none",
+            background: canSend ? "var(--primary)" : "var(--vp-border-light)",
             opacity: canSend ? 1 : 0.4,
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
-            stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 2L15 8L2 14L5 8L2 2Z" />
-          </svg>
+          <Send className="w-3.5 h-3.5 text-white" />
         </button>
       </div>
     </div>

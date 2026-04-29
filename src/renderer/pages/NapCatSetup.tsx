@@ -77,7 +77,7 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
             <div className="space-y-4 scale-in">
               <div
                 className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, var(--vp-success-soft), #ecfdf5)" }}
+                style={{ background: "var(--vp-success-soft)" }}
               >
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--vp-success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 6L9 17l-5-5" />
@@ -92,7 +92,7 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
             <div className="space-y-4 scale-in">
               <div
                 className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, var(--vp-error-soft), #fef2f2)" }}
+                style={{ background: "var(--vp-error-soft)" }}
               >
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--vp-error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
@@ -108,7 +108,7 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
             <div className="space-y-6 scale-in">
               <div
                 className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
+                style={{ background: "var(--vp-primary-soft)" }}
               >
                 <Cat className="w-7 h-7 text-primary" />
               </div>

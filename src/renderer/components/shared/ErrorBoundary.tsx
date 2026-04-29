@@ -33,7 +33,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <div className="text-center space-y-3 scale-in max-w-xs">
               <div
                 className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, var(--vp-error-soft), #fef2f2)" }}
+                style={{ background: "var(--vp-error-soft)" }}
               >
                 <AlertTriangle className="w-7 h-7 text-destructive" />
               </div>

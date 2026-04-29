@@ -25,8 +25,8 @@ export function useChat() {
       const d = data as { text: string; index: number; total: number };
       const now = new Date().toISOString();
 
-      // 延迟追加，模拟打字节奏
-      const delay = d.index === 0 ? 0 : 600 + Math.random() * 600;
+      // 延迟追加，模拟真人一句一句打字的节奏
+      const delay = d.index === 0 ? 0 : 800 + Math.random() * 1200;
       setTimeout(() => {
         setMessages((prev) => [...prev, { role: "partner", content: d.text, time: now }]);
         if (d.index === d.total - 1) {

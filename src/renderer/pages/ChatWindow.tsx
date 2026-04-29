@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { Heart, Settings, MessageCircle, MessageSquare } from "lucide-react";
 import { useChat } from "../hooks/useChat";
 import MessageList from "../components/chat/MessageList";
 import MessageInput from "../components/chat/MessageInput";
@@ -44,56 +44,54 @@ export default function ChatWindow() {
       <UpdateToast />
 
       <header
-        className="h-14 flex items-center justify-between px-5 shrink-0 glass border-b"
-        style={{ borderColor: "var(--vp-separator)" }}
+        className="h-12 flex items-center justify-between px-4 shrink-0 border-b z-header"
+        style={{ background: "var(--background)", borderColor: "var(--border)" }}
       >
-        <div className="flex items-center gap-3">
-          <Avatar
-            className="w-7 h-7"
-            style={{ background: "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
-          >
+        <div className="flex items-center gap-2.5">
+          <Avatar className="w-7 h-7" style={{ background: "var(--vp-primary-soft)" }}>
             <AvatarFallback className="bg-transparent">
               <Heart className="w-3.5 h-3.5 text-primary" fill="currentColor" />
             </AvatarFallback>
           </Avatar>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{name}</span>
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 pulse-ring" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
+            <span className="text-sm font-medium">{name}</span>
+            <span className="text-[10px] font-mono tracking-wider text-emerald-500">ONLINE</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <time className="text-xs font-mono tabular-nums text-muted-foreground">{time}</time>
+        <div className="flex items-center gap-1">
+          <time className="text-[11px] font-mono tabular-nums text-muted-foreground mr-2">{time}</time>
+          <button
+            onClick={() => setShowNapCat(true)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-105"
+            title="QQ"
+          >
+            <MessageCircle className="w-4 h-4" />
+          </button>
+          <button
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-105"
+            title="微信"
+          >
+            <MessageSquare className="w-4 h-4" />
+          </button>
           <button
             onClick={() => setShowSettings(true)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-105"
+            title="设置"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="8" cy="8" r="2.5" />
-              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
-            </svg>
+            <Settings className="w-4 h-4" />
           </button>
         </div>
       </header>
 
       <MessageList messages={messages} typing={typing} messagesEndRef={messagesEndRef} />
 
-      <div className="shrink-0 glass" style={{ borderTop: "1px solid var(--vp-separator)" }}>
-        <div className="gradient-line" />
+      <div className="shrink-0" style={{ background: "var(--background)", borderTop: "1px solid var(--border)" }}>
         <MessageInput onSend={sendMessage} disabled={typing} />
       </div>
 
       {showSettings && (
-        <SettingsDialog
-          onClose={() => setShowSettings(false)}
-          onOpenNapCat={() => {
-            setShowSettings(false);
-            setShowNapCat(true);
-          }}
-        />
+        <SettingsDialog onClose={() => setShowSettings(false)} />
       )}
 
       {showSurvey && <SurveyDialog onClose={() => setShowSurvey(false)} />}

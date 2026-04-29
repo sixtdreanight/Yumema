@@ -32,10 +32,10 @@ export default function SetupWizard() {
   if (transitioning) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4 scale-in">
+        <div className="text-center space-y-4 bounce-in">
           <div
             className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"
-            style={{ background: transitionTimedOut ? "#fef2f2" : "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
+            style={{ background: transitionTimedOut ? "var(--vp-error-soft)" : "var(--vp-primary-soft)" }}
           >
             {transitionTimedOut
               ? <AlertTriangle className="w-8 h-8 text-destructive" />
@@ -62,10 +62,13 @@ export default function SetupWizard() {
 
   return (
     <div className="h-screen flex flex-col select-none bg-background">
-      <div className="h-[3px] shrink-0 bg-muted">
+      <div className="h-[2px] shrink-0 bg-muted">
         <div
-          className="h-full transition-all duration-600 ease-out bg-gradient-to-r from-violet-500 to-indigo-500"
-          style={{ width: `${progress}%` }}
+          className="h-full bg-primary transition-all"
+          style={{
+            width: `${progress}%`,
+            transition: "width 600ms var(--ease-spring)",
+          }}
         />
       </div>
 
@@ -73,16 +76,17 @@ export default function SetupWizard() {
         {STEPS.map((_, i) => (
           <div
             key={i}
-            className="rounded-full transition-all duration-400"
+            className="rounded-full transition-all"
             style={{
-              width: i === step ? 20 : 6,
+              width: i === step ? 22 : 6,
               height: 6,
               background:
                 i === step
-                  ? "linear-gradient(to right, var(--vp-primary), var(--vp-accent))"
+                  ? "var(--primary)"
                   : i < step
                     ? "var(--vp-primary-light)"
-                    : "var(--vp-border)",
+                    : "var(--border)",
+              transition: "all 400ms var(--ease-spring)",
             }}
           />
         ))}
@@ -96,7 +100,7 @@ export default function SetupWizard() {
         </div>
       </div>
 
-      <div className="h-14 flex items-center justify-between px-6 shrink-0 glass border-t border-border">
+      <div className="h-12 flex items-center justify-between px-6 shrink-0 border-t border-border" style={{ background: "var(--background)" }}>
         <div>
           {step > 0 && (
             <Button variant="ghost" size="sm" onClick={back}>← 上一步</Button>

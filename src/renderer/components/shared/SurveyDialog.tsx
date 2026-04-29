@@ -89,8 +89,8 @@ export default function SurveyDialog({ onClose }: { onClose: () => void }) {
                 >
                   <Star
                     className="w-6 h-6"
-                    fill={n <= rating ? "#f59e0b" : "none"}
-                    stroke={n <= rating ? "#f59e0b" : "currentColor"}
+                    fill={n <= rating ? "var(--vp-warning)" : "none"}
+                    stroke={n <= rating ? "var(--vp-warning)" : "currentColor"}
                   />
                 </button>
               ))}

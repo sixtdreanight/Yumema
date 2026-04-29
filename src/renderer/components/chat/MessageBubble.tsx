@@ -18,7 +18,7 @@ export default function MessageBubble({
 
   return (
     <div
-      className={`flex items-start gap-2.5 pt-2 pb-0.5 slide-in-${isPartner ? "left" : "right"} ${
+      className={`flex items-start gap-2.5 pt-2 pb-0.5 float-up ${
         isPartner ? "" : "flex-row-reverse"
       }`}
     >
@@ -27,7 +27,7 @@ export default function MessageBubble({
           <Avatar
             className={`${isPartner ? "w-7 h-7" : "w-7 h-7"}`}
             style={isPartner
-              ? { background: "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }
+              ? { background: "var(--vp-primary-soft)" }
               : { background: "var(--muted)" }
             }
           >
@@ -43,38 +43,18 @@ export default function MessageBubble({
         )}
       </div>
 
-      <div className={`flex flex-col max-w-[70%] ${isPartner ? "" : "items-end"}`}>
+      <div className={`flex flex-col max-w-[75%] ${isPartner ? "" : "items-end"}`}>
         <div
-          className="relative px-3.5 py-2.5 text-sm leading-relaxed break-words"
+          className="px-3.5 py-2.5 text-[15px] leading-relaxed break-words"
           style={{
             background: isPartner ? "var(--vp-bubble-partner)" : "var(--vp-bubble-user)",
             color: isPartner ? "var(--vp-bubble-partner-text)" : "var(--vp-bubble-user-text)",
             borderRadius: isPartner
-              ? showAvatar
-                ? "4px 16px 16px 16px"
-                : "16px"
-              : showAvatar
-                ? "16px 4px 16px 16px"
-                : "16px",
-            border: isPartner ? "1px solid var(--vp-border)" : "none",
-            boxShadow: isPartner ? "var(--vp-shadow-xs)" : "0 2px 8px rgba(124, 58, 237, 0.25)",
+              ? "16px 16px 16px 4px"
+              : "16px 16px 4px 16px",
+            border: isPartner ? "1px solid var(--border)" : "none",
           }}
         >
-          {isPartner && showAvatar && (
-            <div
-              className="absolute left-0 top-0"
-              style={{
-                width: 10,
-                height: 10,
-                background: "var(--vp-bubble-partner)",
-                borderLeft: "1px solid var(--vp-border)",
-                borderTop: "1px solid var(--vp-border)",
-                borderTopLeftRadius: 4,
-                transform: "translate(-3px, 0px) skewX(-8deg)",
-                clipPath: "polygon(0 0, 100% 0, 100% 40%, 0 100%)",
-              }}
-            />
-          )}
           {message.content}
         </div>
 

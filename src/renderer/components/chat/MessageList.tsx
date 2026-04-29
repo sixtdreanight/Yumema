@@ -1,5 +1,5 @@
 import { type RefObject, useEffect, useRef, useMemo } from "react";
-import { MessageSquare, Heart } from "lucide-react";
+import { Users, Heart } from "lucide-react";
 import type { ChatMessage } from "../../hooks/useChat";
 import MessageBubble from "./MessageBubble";
 import { Avatar, AvatarFallback } from "../ui/avatar";
@@ -53,14 +53,14 @@ export default function MessageList({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center" style={{ background: "var(--vp-bg-chat)" }}>
-        <div className="text-center scale-in">
+        <div className="text-center bounce-in">
           <div
-            className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
+            className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: "var(--vp-primary-soft)" }}
           >
-            <MessageSquare className="w-9 h-9 text-primary" />
+            <Users className="w-7 h-7 text-primary" />
           </div>
-          <h3 className="text-base font-semibold">开始聊天吧</h3>
+          <h3 className="text-base font-medium">开始聊天吧</h3>
           <p className="text-sm mt-1.5 text-muted-foreground">
             发送第一条消息，TA 会回复你
           </p>
@@ -77,11 +77,11 @@ export default function MessageList({
             {group.label && (
               <div className="flex items-center justify-center py-3">
                 <span
-                  className="text-xs px-3 py-0.5 rounded-full font-mono"
+                  className="text-[11px] px-3 py-0.5 rounded-full font-mono"
                   style={{
                     background: "var(--vp-surface)",
-                    color: "var(--vp-time-label)",
-                    border: "1px solid var(--vp-separator)",
+                    color: "var(--muted-foreground)",
+                    border: "1px solid var(--border)",
                   }}
                 >
                   {group.label}
@@ -102,7 +102,7 @@ export default function MessageList({
           <div className="flex items-start gap-2.5 pt-2 slide-up">
             <Avatar
               className="w-7 h-7"
-              style={{ background: "linear-gradient(135deg, var(--vp-primary-soft), #ede9fe)" }}
+              style={{ background: "var(--vp-primary-soft)" }}
             >
               <AvatarFallback className="bg-transparent">
                 <Heart className="w-3.5 h-3.5 text-primary" fill="currentColor" />
@@ -112,9 +112,8 @@ export default function MessageList({
               className="px-4 py-3 rounded-2xl"
               style={{
                 background: "var(--vp-bubble-partner)",
-                border: "1px solid var(--vp-border)",
-                borderBottomLeftRadius: 6,
-                boxShadow: "var(--vp-shadow-xs)",
+                border: "1px solid var(--border)",
+                borderRadius: "16px 16px 16px 4px",
               }}
             >
               <span className="bounce-dot" />

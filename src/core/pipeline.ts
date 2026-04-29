@@ -74,35 +74,39 @@ export function createAIProvider(config: AppConfig["ai"]): LanguageModel {
 // ---- 消息拆分 ----
 
 /**
- * 将长文本按句子边界拆成短段落，模拟微信聊天风格
- * 每段控制在 80 字以内，在句号/问号/感叹号处自然断开
+ * 将长文本按句子边界拆成短气泡，模拟真人微信聊天
+ * 一句一气泡，每段不超过 50 字
  */
 export function splitForChat(text: string): string[] {
   if (!text || text.length === 0) return [""];
 
-  // 按句子结束标点拆分
-  const sentences = text
+  // 移除括号内容（心理/动作描写残留）
+  let cleaned = text.replace(/[（(][^）)]*[）)]/g, "");
+  // 移除 *动作* _心理_ 标记
+  cleaned = cleaned.replace(/\*[^*]+\*/g, "").replace(/_[^_]+_/g, "");
+
+  // 按中文标点拆分
+  const sentences = cleaned
     .split(/(?<=[。！？…\.!\?～~\n])\s*/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
-  if (sentences.length === 0) return [text];
-  if (sentences.length === 1 && sentences[0].length <= 80) return sentences;
+  if (sentences.length === 0) return [cleaned.trim() || text];
 
-  // 合并短句，保持每段不超过 80 字
+  // 每段不超过 50 字
   const result: string[] = [];
-  let current = sentences[0];
-
-  for (let i = 1; i < sentences.length; i++) {
-    const next = sentences[i];
-    if ((current + next).length <= 80) {
-      current += next;
+  for (const s of sentences) {
+    if (s.length <= 50) {
+      result.push(s);
     } else {
-      result.push(current);
-      current = next;
+      // 按逗号/分号二次拆分
+      const parts = s
+        .split(/(?<=[，,；;])/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+      result.push(...parts);
     }
   }
-  result.push(current);
 
   return result.length > 0 ? result : [text];
 }

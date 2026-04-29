@@ -5,70 +5,114 @@ on:
     tags:
       - "v*"
 
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
 permissions:
   contents: write
 
 jobs:
-  mac:
+  mac-x64:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        arch: [x64, arm64]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-
       - run: npm ci
-
       - run: npm run build
-
-      - name: Package mac-${{ matrix.arch }}
+      - name: Package mac-x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --mac --${{ matrix.arch }} --publish always
+        run: npx electron-builder --mac --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-x64
+          path: release/*.dmg
 
-  win:
+  mac-arm64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Package mac-arm64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --mac --arm64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-arm64
+          path: release/*.dmg
+
+  win-x64:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-
       - run: npm ci
-
       - run: npm run build
-
       - name: Package win-x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64 --publish always
+        run: npx electron-builder --win --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win-x64
+          path: release/*.exe
 
-  linux:
+  linux-x64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-
       - run: npm ci
-
       - run: npm run build
-
       - name: Package linux-x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --linux --x64 --publish always
+        run: npx electron-builder --linux --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: release/*.AppImage
+
+  publish:
+    needs: [mac-x64, mac-arm64, win-x64, linux-x64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          path: release/
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: V-Partner ${{ github.ref_name }}
+          body: |
+            ## V-Partner ${{ github.ref_name }}
+
+            ### 下载
+            - **macOS (Intel)**: `.dmg`
+            - **macOS (Apple Silicon)**: `.dmg`
+            - **Windows (x64)**: `.exe`
+            - **Linux (x64)**: `.AppImage`
+
+            ### 更新内容
+            详见 [CHANGELOG](https://github.com/sixtdreanight/V-Partner/blob/main/docs/CHANGELOG.md)
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
