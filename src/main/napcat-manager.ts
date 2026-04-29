@@ -44,6 +44,24 @@ function platformKey(): string {
   return `${process.platform}-${process.arch}`;
 }
 
+/** 检查 QQ 桌面客户端是否已安装 */
+function isQQInstalled(): boolean {
+  if (process.platform === "darwin") {
+    return existsSync("/Applications/QQ.app");
+  }
+  if (process.platform === "win32") {
+    // Windows: 检查常见安装路径
+    const programFiles = process.env["ProgramFiles"] || "C:\\Program Files";
+    const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+    return (
+      existsSync(join(programFiles, "Tencent", "QQNT", "QQ.exe")) ||
+      existsSync(join(programFilesX86, "Tencent", "QQNT", "QQ.exe"))
+    );
+  }
+  // Linux: 检查常见路径
+  return existsSync("/opt/QQ/qq") || existsSync("/usr/bin/qq");
+}
+
 function napCatDir(): string {
   return join(app.getPath("userData"), "napcat");
 }
@@ -285,6 +303,14 @@ export class NapCatManager {
       return;
     }
 
+    if (!isQQInstalled()) {
+      this.setStatus("error",
+        process.platform === "darwin"
+          ? "未找到 QQ 客户端。请从 https://im.qq.com 下载安装 QQ，注意：App Store 版本不支持。"
+          : "未找到 QQ 客户端。请先安装 QQ 桌面版。");
+      return;
+    }
+
     this.setStatus("starting", "启动 NapCatQQ...");
 
     const binary = napCatBinary();
@@ -296,15 +322,14 @@ export class NapCatManager {
       const isNodeScript = !process.platform.startsWith("win");
       const cmd = isNodeScript ? "node" : binary;
       const args = isNodeScript ? [binary] : [];
-      this.process = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"], shell: true });
+
+        this.process = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"], shell: true });
 
       this.process.stdout?.on("data", (data: Buffer) => {
-        const text = data.toString();
-        this.parseStdout(text);
+        this.parseStdout(data.toString());
       });
 
       this.process.stderr?.on("data", (data: Buffer) => {
-        // NapCatQQ 可能把日志输出到 stderr
         this.parseStdout(data.toString());
       });
 
@@ -353,15 +378,6 @@ export class NapCatManager {
 
   /** 解析 stdout/stderr 中的关键信息 */
   private parseStdout(text: string): void {
-    // 检测 QQ 未安装错误 (macOS/Linux)
-    if (/ENOENT.*versions.*package\.json|QQ.*not found|no such file.*QQ/i.test(text)) {
-      this.setStatus("error",
-        process.platform === "darwin"
-          ? "未找到 QQ 客户端。macOS App Store 版 QQ 不支持 NapCatQQ，请使用 Windows 运行 QQ 机器人功能。"
-          : "未找到 QQ 客户端。请先安装 QQ 桌面版。");
-      return;
-    }
-
     // NapCatQQ 输出中检测 QR 码 URL
     // 常见格式: https://qrcode.qq.com/... 或 base64 QR 图片
     const qrUrlMatch = text.match(/https?:\/\/[^\s]*qrcode[^\s]*/i);
