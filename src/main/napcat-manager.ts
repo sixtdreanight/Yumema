@@ -48,17 +48,16 @@ function napCatDir(): string {
   return join(app.getPath("userData"), "napcat");
 }
 
-/** NapCatQQ zip 解压后可能有子目录（如 NapCat.Shell/），需要递归查找实际二进制路径 */
+/** NapCatQQ zip 解压后可能有子目录，需要递归查找实际二进制路径 */
 function findNapCatBinary(): string {
   const dir = napCatDir();
   if (process.platform === "win32") {
-    // win32: 递归查找 NapCatWinMain.exe
-    const found = findFile(dir, "NapCatWinMain.exe");
-    return found || join(dir, "NapCatWinMain.exe");
+    const found = findFile(dir, "NapCatWinBootMain.exe");
+    return found || join(dir, "NapCatWinBootMain.exe");
   }
-  // macOS/Linux: 递归查找 napcat.sh
-  const found = findFile(dir, "napcat.sh");
-  return found || join(dir, "napcat.sh");
+  // macOS/Linux: 新版 NapCatQQ 使用 napcat.mjs (Node.js bundled)，不再有 napcat.sh
+  const found = findFile(dir, "napcat.mjs");
+  return found || join(dir, "napcat.mjs");
 }
 
 /** 在目录中递归查找指定文件，返回第一个匹配的完整路径 */
@@ -246,7 +245,7 @@ export class NapCatManager {
     // 查找实际二进制路径（zip 可能有子目录）
     const binaryPath = findNapCatBinary();
     if (!binaryPath || !existsSync(binaryPath)) {
-      this.setStatus("error", "解压后未找到 napcat.sh/NapCatWinMain.exe，请检查 zip 包结构");
+      this.setStatus("error", "解压后未找到 napcat.mjs/NapCatWinBootMain.exe，请检查 zip 包结构");
       throw new Error(`NapCat binary not found after extraction in ${dir}`);
     }
 
@@ -274,12 +273,6 @@ export class NapCatManager {
       "utf-8",
     );
 
-    // macOS/Linux: 给 napcat.sh 执行权限
-    if (process.platform !== "win32") {
-      const { execSync } = await import("node:child_process");
-      execSync(`chmod +x "${napCatBinary()}"`, { stdio: "pipe" });
-    }
-
     this.setStatus("stopped", "NapCatQQ 已安装");
   }
 
@@ -298,7 +291,12 @@ export class NapCatManager {
     const cwd = dirname(binary);
 
     try {
-      this.process = spawn(binary, [], { cwd, stdio: ["ignore", "pipe", "pipe"], shell: true });
+      // macOS/Linux: 新版 NapCatQQ 是 napcat.mjs (Node.js)，用 node 启动
+      // Windows: 直接运行 NapCatWinBootMain.exe
+      const isNodeScript = !process.platform.startsWith("win");
+      const cmd = isNodeScript ? "node" : binary;
+      const args = isNodeScript ? [binary] : [];
+      this.process = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"], shell: true });
 
       this.process.stdout?.on("data", (data: Buffer) => {
         const text = data.toString();
