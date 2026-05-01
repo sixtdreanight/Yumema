@@ -289,13 +289,13 @@ export function loadProfile(): Profile | null {
     logger.error("data/profile.json user_gender 无效");
     return null;
   }
-  if (typeof profile.partner_gender !== "string" || !["male", "female", "other"].includes(profile.partner_gender as string)) {
-    logger.error("data/profile.json partner_gender 无效");
-    return null;
-  }
   if (typeof profile.relationship_type !== "string" || !["girlfriend", "boyfriend"].includes(profile.relationship_type as string)) {
     logger.error("data/profile.json relationship_type 无效");
     return null;
+  }
+  // Backward compat: default partner_gender from relationship_type if missing
+  if (typeof profile.partner_gender !== "string" || !["male", "female", "other"].includes(profile.partner_gender as string)) {
+    profile.partner_gender = profile.relationship_type === "boyfriend" ? "male" : "female";
   }
   if (typeof profile.relationship_mode !== "string" || !["direct", "slow_burn"].includes(profile.relationship_mode as string)) {
     logger.error("data/profile.json relationship_mode 无效");
