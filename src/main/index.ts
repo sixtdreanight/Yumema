@@ -24,7 +24,7 @@ function createWindow(startRoute: "setup" | "chat") {
     titleBarStyle: "hiddenInset",
     show: false,
     webPreferences: {
-      preload: join(__dirname, "../preload/preload.mjs"),
+      preload: join(__dirname, "../preload/preload.cjs"),
       contextIsolation: true,
     },
   });
@@ -130,7 +130,7 @@ app.whenReady().then(() => {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:*;",
+          "default-src 'self'; script-src 'self' 'sha256-kNOUC0TwZWTjiauI56CRc3F79M+yxOqv+fcvbsN/ZpM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:*;",
         ],
       },
     });
