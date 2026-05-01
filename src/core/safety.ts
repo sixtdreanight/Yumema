@@ -39,22 +39,36 @@ export interface SafetyResult {
  * 检查用户输入是否安全
  * 返回 { ok: true } 表示通过，{ ok: false } 表示需拦截
  */
-export function checkInput(msg: string): SafetyResult {
-  // 空消息直接通过
+export type FilterLevel = "strict" | "moderate" | "off";
+
+/** 仅 moderate 模式放行，strict 拦截的 prompt injection 类模式 */
+const INSTRUCTION_PATTERNS: RegExp[] = [
+  /忽略.*(指令|提示|规则)/i,
+  /ignore.*(instruction|prompt|rule)/i,
+  /你(现在是|从现在起是)(一个|新的|我的)/,
+];
+
+/** 仅 strict 模式拦截 = 全部；moderate = 排除指令注入 */
+const MODERATE_PATTERNS = BLOCKED_PATTERNS.filter(
+  (p) => !INSTRUCTION_PATTERNS.some((ip) => ip.source === p.source)
+);
+
+export function checkInput(msg: string, filterLevel: FilterLevel = "strict"): SafetyResult {
+  if (filterLevel === "off") return { ok: true };
   if (!msg || msg.trim().length === 0) return { ok: true };
 
-  for (const pattern of BLOCKED_PATTERNS) {
+  const patterns = filterLevel === "moderate" ? MODERATE_PATTERNS : BLOCKED_PATTERNS;
+
+  for (const pattern of patterns) {
     if (pattern.test(msg)) {
       logger.warn(`安全拦截: "${msg.slice(0, 80)}" → ${pattern.source}`);
       return { ok: false, reason: "illegal", userMessage: msg };
     }
   }
 
-  // 检测是否包含争议话题 — 不拦截，但标记
   const hasSensitive = SENSITIVE_TOPICS.some((t) => msg.includes(t));
   if (hasSensitive) {
     logger.debug(`争议话题标记: "${msg.slice(0, 80)}"`);
-    // 标记由 pipeline 处理，在系统提示词中注入中立要求
   }
 
   return { ok: true };

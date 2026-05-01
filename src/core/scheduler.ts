@@ -13,13 +13,14 @@ export interface ScheduledTasks {
   sendMessage: (userId: string, message: string) => Promise<void>;
   getActiveUsers: () => string[];
   profile: Profile;
+  showNotification?: (title: string, body: string) => void;
 }
 
 /**
  * 启动所有定时任务
  */
 export function startScheduler(tasks: ScheduledTasks) {
-  const { sendMessage, getActiveUsers, profile } = tasks;
+  const { sendMessage, getActiveUsers, profile, showNotification } = tasks;
 
   // 早安问候 — 每天早上 8:37
   cron.schedule("37 8 * * *", () => {
@@ -39,6 +40,7 @@ export function startScheduler(tasks: ScheduledTasks) {
         logger.warn(`早安问候发送失败: ${err}`),
       );
     }
+    showNotification?.(profile.name, msg);
     logger.info(`已发送早安问候给 ${users.length} 位用户`);
   });
 
@@ -60,6 +62,7 @@ export function startScheduler(tasks: ScheduledTasks) {
         logger.warn(`晚安问候发送失败: ${err}`),
       );
     }
+    showNotification?.(profile.name, msg);
     logger.info(`已发送晚安问候给 ${users.length} 位用户`);
   });
 

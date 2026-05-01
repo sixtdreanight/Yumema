@@ -95,6 +95,7 @@ export interface AppConfig {
     longTermExtractInterval: number;
     maxFactsInContext: number;
   };
+  contentFilter: "strict" | "moderate" | "off";
 }
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -115,18 +116,24 @@ export function getDataRoot(): string {
   return resolve(__dirname, "..", "..");
 }
 
+const VALID_PROVIDERS = ["anthropic", "openai", "openai-compatible", "ollama"] as const;
+
 /** Load .env from data root into process.env (only keys not already set by system) */
 function loadEnvFile(dataRoot: string): void {
   const envPath = resolve(dataRoot, ".env");
   if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf-8");
-  const parsed = dotenvParse(content);
-  for (const [key, value] of Object.entries(parsed)) {
-    if (process.env[key] === undefined && value) {
-      process.env[key] = value;
+  try {
+    const content = readFileSync(envPath, "utf-8");
+    const parsed = dotenvParse(content);
+    for (const [key, value] of Object.entries(parsed)) {
+      if (process.env[key] === undefined && value) {
+        process.env[key] = value;
+      }
     }
+    logger.info(`Loaded .env from ${envPath}`);
+  } catch (err) {
+    logger.error(`Failed to load .env from ${envPath}:`, err);
   }
-  logger.info(`Loaded .env from ${envPath}`);
 }
 
 /** Re-read .env from current data root — picks up runtime config changes */
@@ -139,6 +146,7 @@ export function writeEnvFile(partial: {
   ai?: Partial<AIConfig>;
   qq?: Partial<QQConfig>;
   wechat?: Partial<WeChatConfig>;
+  contentFilter?: AppConfig["contentFilter"];
 }): void {
   const envPath = resolve(getDataRoot(), ".env");
   let content = "";
@@ -177,6 +185,9 @@ export function writeEnvFile(partial: {
     if (partial.wechat.token) setEnv("WECHAT_TOKEN", partial.wechat.token);
     if (partial.wechat.appid) setEnv("WECHAT_APPID", partial.wechat.appid);
   }
+  if (partial.contentFilter) {
+    setEnv("CONTENT_FILTER", partial.contentFilter);
+  }
   const tmpPath = envPath + ".tmp." + Date.now();
   writeFileSync(tmpPath, content, "utf-8");
   renameSync(tmpPath, envPath);
@@ -190,13 +201,24 @@ const DEFAULTS: Partial<AppConfig> = {
     longTermExtractInterval: 20,
     maxFactsInContext: 5,
   },
+  contentFilter: "strict",
 };
 
 // ---- 加载函数 ----
 
+/** Validate provider string against allowed values */
+function validateProvider(raw: string | undefined, fallback: AIConfig["provider"]): AIConfig["provider"] {
+  if (!raw) return fallback;
+  if (VALID_PROVIDERS.includes(raw as typeof VALID_PROVIDERS[number])) {
+    return raw as AIConfig["provider"];
+  }
+  logger.warn(`Invalid AI_PROVIDER "${raw}", falling back to "${fallback}"`);
+  return fallback;
+}
+
 /** 从 .env 加载 AI、QQ 和微信配置 */
 function loadEnvConfig(): { ai: AIConfig; qq: QQConfig; wechat: WeChatConfig } {
-  const provider = (process.env.AI_PROVIDER || "anthropic") as AIConfig["provider"];
+  const provider = validateProvider(process.env.AI_PROVIDER, "anthropic");
   const model = process.env.AI_MODEL || "claude-sonnet-4-20250514";
   const apiKey =
     process.env.AI_API_KEY ||
@@ -216,7 +238,9 @@ function loadEnvConfig(): { ai: AIConfig; qq: QQConfig; wechat: WeChatConfig } {
       baseUrl: process.env.AI_BASE_URL,
       maxTokens: Number(process.env.AI_MAX_TOKENS) || 2048,
       temperature: Number(process.env.AI_TEMPERATURE) || 0.85,
-      backupProvider: process.env.AI_BACKUP_PROVIDER as AIConfig["provider"] | undefined,
+      backupProvider: process.env.AI_BACKUP_PROVIDER
+        ? validateProvider(process.env.AI_BACKUP_PROVIDER, "anthropic")
+        : undefined,
       backupModel: process.env.AI_BACKUP_MODEL || undefined,
       backupApiKey: process.env.AI_BACKUP_API_KEY || undefined,
       backupBaseUrl: process.env.AI_BACKUP_BASE_URL || undefined,
@@ -242,18 +266,56 @@ export function loadProfile(): Profile | null {
     logger.warn("未找到 data/profile.json，请先运行 npm run setup");
     return null;
   }
-  const raw = readFileSync(profilePath, "utf-8");
-  return JSON.parse(raw) as Profile;
+  let raw: string;
+  try {
+    raw = readFileSync(profilePath, "utf-8");
+  } catch {
+    logger.error("无法读取 data/profile.json");
+    return null;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    logger.error("data/profile.json 格式损坏，无法解析");
+    return null;
+  }
+  const profile = parsed as Record<string, unknown>;
+  if (typeof profile.name !== "string" || !profile.name) {
+    logger.error("data/profile.json 缺少必填字段 name");
+    return null;
+  }
+  if (typeof profile.user_gender !== "string" || !["male", "female", "other"].includes(profile.user_gender as string)) {
+    logger.error("data/profile.json user_gender 无效");
+    return null;
+  }
+  if (typeof profile.partner_gender !== "string" || !["male", "female", "other"].includes(profile.partner_gender as string)) {
+    logger.error("data/profile.json partner_gender 无效");
+    return null;
+  }
+  if (typeof profile.relationship_type !== "string" || !["girlfriend", "boyfriend"].includes(profile.relationship_type as string)) {
+    logger.error("data/profile.json relationship_type 无效");
+    return null;
+  }
+  if (typeof profile.relationship_mode !== "string" || !["direct", "slow_burn"].includes(profile.relationship_mode as string)) {
+    logger.error("data/profile.json relationship_mode 无效");
+    return null;
+  }
+  return parsed as Profile;
 }
 
 /** 加载完整应用配置 */
 export function loadConfig(): AppConfig {
   const env = loadEnvConfig();
+  const filter = process.env.CONTENT_FILTER as AppConfig["contentFilter"] | undefined;
   return {
     ai: env.ai,
     qq: env.qq,
     wechat: env.wechat,
     memory: DEFAULTS.memory!,
+    contentFilter: filter === "strict" || filter === "moderate" || filter === "off"
+      ? filter
+      : DEFAULTS.contentFilter!,
   };
 }
 

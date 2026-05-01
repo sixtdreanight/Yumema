@@ -7,7 +7,7 @@
 
 import { WebSocket } from "ws";
 import type { QQConfig } from "../core/config.js";
-import { logger } from "../core/utils.js";
+import { logger, sleep } from "../core/utils.js";
 
 // ---- 类型 ----
 
@@ -57,8 +57,6 @@ export type MessageHandler = (msg: QQMessage) => Promise<string[]>;
 
 // ---- 消息处理 ----
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
 /** 从 OneBot 消息段数组中提取纯文本 */
 function extractText(segments: MsgSegment[]): string {
   return segments
@@ -83,8 +81,31 @@ export function startOneBot(
 ): { stop: () => void } {
   let ws: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let pingTimer: ReturnType<typeof setInterval> | null = null;
   let running = true;
   let echoCounter = 0;
+  let retryCount = 0;
+  const BACKOFF_INITIAL = 1000;
+  const BACKOFF_MAX = 60000;
+
+  function backoffDelay(): number {
+    const base = Math.min(BACKOFF_INITIAL * Math.pow(2, retryCount), BACKOFF_MAX);
+    const jitter = base * 0.2 * (Math.random() * 2 - 1); // ±20%
+    return Math.round(base + jitter);
+  }
+
+  function startPing() {
+    stopPing();
+    pingTimer = setInterval(() => {
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.ping();
+      }
+    }, 15000);
+  }
+
+  function stopPing() {
+    if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
+  }
 
   function connect() {
     if (!running) return;
@@ -99,6 +120,8 @@ export function startOneBot(
 
     ws.on("open", () => {
       logger.info("QQ WebSocket 已连接");
+      retryCount = 0;
+      startPing();
     });
 
     ws.on("message", async (raw) => {
@@ -120,17 +143,22 @@ export function startOneBot(
       }
     });
 
-    ws.on("close", (code, reason) => {
+    ws.on("close", (code) => {
+      stopPing();
       logger.warn(`QQ WebSocket 断开: code=${code}`);
       if (running) {
-        const delay = config.reconnectIntervalMs;
-        logger.info(`${delay / 1000}s 后重连...`);
+        retryCount++;
+        const delay = backoffDelay();
+        logger.info(`${(delay / 1000).toFixed(1)}s 后重连... (重试 #${retryCount})`);
         reconnectTimer = setTimeout(connect, delay);
       }
     });
 
     ws.on("error", (err) => {
       logger.error("QQ WebSocket 错误:", err.message);
+    });
+    ws.on("pong", () => {
+      logger.debug("QQ WebSocket pong");
     });
   }
 
@@ -219,6 +247,7 @@ export function startOneBot(
     stop: () => {
       running = false;
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      stopPing();
       if (ws) {
         ws.close();
         ws = null;

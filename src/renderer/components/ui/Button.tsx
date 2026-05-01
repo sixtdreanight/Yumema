@@ -29,10 +29,22 @@ interface ButtonProps extends Omit<RadixButtonProps, "variant" | "size" | "color
   variant?: LegacyVariant | string;
   size?: LegacySize | string;
   loading?: boolean;
+  iconOnly?: boolean;
   children?: ReactNode;
 }
 
-const Button = ({ variant, size, loading, disabled, children, ...props }: ButtonProps) => {
+const Button = ({ variant, size, loading, disabled, iconOnly, children, ...props }: ButtonProps) => {
+  if (iconOnly) {
+    return (
+      <button
+        className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+        disabled={disabled || loading}
+        {...(props as Record<string, unknown>)}
+      >
+        {loading ? "..." : children}
+      </button>
+    );
+  }
   return (
     <RadixButton
       variant={mapVariant(variant)}

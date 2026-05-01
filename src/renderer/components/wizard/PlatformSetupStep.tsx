@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { Flex } from "@radix-ui/themes";
 import { MessageCircle, MessageSquare } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import Button from "../ui/Button";
+import { GlassCard } from "../ui/GlassCard";
 
 const QQ_STATUS_LABELS: Record<string, string> = {
   stopped: "未启动",
@@ -94,14 +96,15 @@ export default function PlatformSetupStep({
   const wcCanStart = ["stopped", "error", "no-docker"].includes(wechatStatus);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="6">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">连接聊天平台</h2>
         <p className="text-sm text-muted-foreground">让 TA 能在 QQ 或微信上和你聊天</p>
-      </div>
+      </Flex>
 
       {/* QQ Card */}
-      <div className="rounded-xl p-4 space-y-3 bg-card border shadow-sm">
+      <GlassCard variant="solid" padding="p-4">
+        <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
@@ -138,10 +141,12 @@ export default function PlatformSetupStep({
             跳过 QQ 配置
           </button>
         )}
-      </div>
+        </div>
+      </GlassCard>
 
       {/* WeChat Card */}
-      <div className="rounded-xl p-4 space-y-3 bg-card border shadow-sm">
+      <GlassCard variant="solid" padding="p-4">
+        <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-emerald-500" />
@@ -178,11 +183,12 @@ export default function PlatformSetupStep({
             跳过微信配置
           </button>
         )}
-      </div>
+        </div>
+      </GlassCard>
 
       <p className="text-xs text-center text-muted-foreground">
         也可稍后在设置中配置，不影响应用内聊天
       </p>
-    </div>
+    </Flex>
   );
 }

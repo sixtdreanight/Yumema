@@ -1,4 +1,5 @@
 import { Input, Field } from "../ui/Input";
+import { Flex } from "@radix-ui/themes";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/Select";
 import { Slider } from "../ui/Slider";
 import CardSelect from "../shared/CardSelect";
@@ -50,11 +51,11 @@ export default function AIProviderStep({ data, update }: Props) {
   const models = getModels(data.aiProvider);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">选择 AI 服务商</h2>
         <p className="text-sm text-muted-foreground">TA 的智能由你选择的 AI 驱动</p>
-      </div>
+      </Flex>
 
       <CardSelect
         options={PROVIDERS}
@@ -62,7 +63,7 @@ export default function AIProviderStep({ data, update }: Props) {
         onChange={(v) => update({ aiProvider: v, aiModel: "" })}
       />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Flex direction="column" gap="3">
         {/* Model Select */}
         {data.aiProvider !== "openai-compatible" && models.length > 0 && (
           <Field label="模型">
@@ -151,7 +152,7 @@ export default function AIProviderStep({ data, update }: Props) {
             <span>2 (创意)</span>
           </div>
         </Field>
-      </div>
-    </div>
+      </Flex>
+    </Flex>
   );
 }

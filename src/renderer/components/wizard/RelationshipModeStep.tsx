@@ -1,4 +1,5 @@
 import { AlertTriangle } from "lucide-react";
+import { Flex } from "@radix-ui/themes";
 import CardSelect from "../shared/CardSelect";
 import { useState } from "react";
 
@@ -18,11 +19,11 @@ export default function RelationshipModeStep({
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">你希望怎么开始你们的关系？</h2>
         <p className="text-sm text-muted-foreground">选择你们故事的起点</p>
-      </div>
+      </Flex>
       <CardSelect options={options} value={data.relationshipMode} onChange={(v) => update({ relationshipMode: v })} />
 
       <div className="rounded-xl overflow-hidden bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
@@ -62,6 +63,6 @@ export default function RelationshipModeStep({
           </div>
         )}
       </div>
-    </div>
+    </Flex>
   );
 }

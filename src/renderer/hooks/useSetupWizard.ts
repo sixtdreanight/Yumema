@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 export interface WizardData {
   name: string;
@@ -79,9 +79,35 @@ export function useSetupWizard() {
   const [error, setError] = useState("");
   const [transitioning, setTransitioning] = useState(false);
   const [transitionTimedOut, setTransitionTimedOut] = useState(false);
+  const mountedRef = useRef(true);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const update = useCallback((partial: Partial<WizardData>) => {
     setData((prev) => ({ ...prev, ...partial }));
+  }, []);
+
+  // 将角色卡解析字段映射到 WizardData（供 QuickStartStep 使用）
+  const fieldMap: Record<string, keyof WizardData> = {
+    age: "partnerAge",
+    city: "partnerCity",
+    occupation: "partnerOccupation",
+    temperament: "partnerTemperament",
+    hobbies: "partnerHobbies",
+    daily_life: "partnerDailyLife",
+    quirks: "partnerQuirks",
+    speaking_style: "customStyle",
+  };
+
+  const updateParseField = useCallback((key: string, value: unknown) => {
+    const mapped = fieldMap[key];
+    if (mapped) {
+      setData((prev) => ({ ...prev, [mapped]: value }));
+    }
   }, []);
 
   const next = useCallback(() => {
@@ -107,7 +133,7 @@ export function useSetupWizard() {
       case 10: return true; // Nickname
       case 11: return true; // SpeakingStyle
       case 12: return true; // MemeStyle
-      case 13: return data.aiApiKey.trim().length > 0;  // AIProvider
+      case 13: return data.aiProvider === "ollama" || data.aiApiKey.trim().length > 0;  // AIProvider (Ollama 无需 key)
       case 14: return true; // PlatformSetup
       case 15: return !saving;  // Summary
       default: return true;
@@ -118,51 +144,52 @@ export function useSetupWizard() {
 
   const saveProfile = useCallback(async () => {
     if (saving) return;
+    const d = dataRef.current;
     setSaving(true);
     setError("");
     setTransitionTimedOut(false);
     try {
       const profile = {
-        name: data.name,
-        age: data.partnerAge || 0,
-        city: data.partnerCity || "",
-        occupation: data.partnerOccupation || "",
-        education: data.partnerEducation || "",
-        major: data.partnerMajor || "",
-        hobbies: data.partnerHobbies || [],
-        temperament: data.partnerTemperament || "",
-        speaking_style: "自然口语化，喜欢用语气词",
-        user_nickname: data.nickname,
-        user_gender: data.userGender,
-        partner_gender: data.partnerGender,
-        relationship_type: data.relationshipType,
-        relationship_mode: data.relationshipMode,
-        user_city: data.userCity,
-        user_timezone: data.timezone,
+        name: d.name,
+        age: d.partnerAge || 0,
+        city: d.partnerCity || "",
+        occupation: d.partnerOccupation || "",
+        education: d.partnerEducation || "",
+        major: d.partnerMajor || "",
+        hobbies: d.partnerHobbies || [],
+        temperament: d.partnerTemperament || "",
+        speaking_style: d.customStyle || "",
+        user_nickname: d.nickname,
+        user_gender: d.userGender,
+        partner_gender: d.partnerGender,
+        relationship_type: d.relationshipType,
+        relationship_mode: d.relationshipMode,
+        user_city: d.userCity,
+        user_timezone: d.timezone,
         opinions: {},
-        daily_life: data.partnerDailyLife || "",
-        quirks: data.partnerQuirks || [],
-        meme_style: memeStyleText(data.memeStyle),
-        custom_style: parseCustomStyle(data.customStyle),
+        daily_life: d.partnerDailyLife || "",
+        quirks: d.partnerQuirks || [],
+        meme_style: memeStyleText(d.memeStyle),
+        custom_style: parseCustomStyle(d.customStyle),
       };
 
       const result = await window.api.saveProfile({
         profile,
         ai: {
-          provider: data.aiProvider,
-          model: data.aiModel || undefined,
-          apiKey: data.aiApiKey,
-          baseUrl: data.aiBaseUrl || undefined,
-          maxTokens: data.aiMaxTokens,
-          temperature: data.aiTemperature,
+          provider: d.aiProvider,
+          model: d.aiModel || undefined,
+          apiKey: d.aiApiKey,
+          baseUrl: d.aiBaseUrl || undefined,
+          maxTokens: d.aiMaxTokens,
+          temperature: d.aiTemperature,
         },
-        qq: data.qqEnabled ? {
-          wsUrl: data.qqWsUrl,
-          accessToken: data.qqAccessToken,
+        qq: d.qqEnabled ? {
+          wsUrl: d.qqWsUrl,
+          accessToken: d.qqAccessToken,
         } : undefined,
-        wechat: data.wechatEnabled ? {
-          baseUrl: data.wechatBaseUrl,
-          fileUrl: data.wechatFileUrl,
+        wechat: d.wechatEnabled ? {
+          baseUrl: d.wechatBaseUrl,
+          fileUrl: d.wechatFileUrl,
         } : undefined,
       });
 
@@ -175,7 +202,9 @@ export function useSetupWizard() {
       setTransitioning(true);
 
       // 10 秒超时：如果切换过程卡死，给用户一个退出路径
-      const timeoutId = setTimeout(() => setTransitionTimedOut(true), 10000);
+      const timeoutId = setTimeout(() => {
+        if (mountedRef.current) setTransitionTimedOut(true);
+      }, 10000);
 
       await window.api.transitionToChat();
       await new Promise((r) => setTimeout(r, 400));
@@ -187,11 +216,11 @@ export function useSetupWizard() {
     } finally {
       setSaving(false);
     }
-  }, [data, saving]);
+  }, [saving]);
 
   return {
     step, data, riskRead, saving, error, transitioning, transitionTimedOut, progress,
-    update, next, back, canNext, setRiskRead,
+    update, updateParseField, next, back, canNext, setRiskRead,
     saveProfile,
     totalSteps: TOTAL_STEPS,
   };

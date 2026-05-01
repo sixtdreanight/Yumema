@@ -1,3 +1,47 @@
+# v0.0.2 开发日志
+
+## 角色模板提取 + 结构化日志 + 去重 + 消息反馈
+
+**日期**: 2026-05-01
+
+### Q11 — 角色模板库
+- 新建 `src/core/role-templates.ts`，5 个预设角色（元气女友/温柔男友/傲娇系/阳光系/沉稳系）
+- QuickStartStep 从内联 TEMPLATES 改为 import，消除 `as Record<string, unknown>` 强转
+
+### Phase 1.4 — 结构化日志
+- `src/core/utils.ts` 新增 `setLogFile()`、`createCorrelationId()`、`cidLogger()`
+- 日志文件写入 `{dataRoot}/logs/app.log`，5MB 自动轮转
+- `main/index.ts` 启动时调用 `setLogFile()` 启用文件日志
+- `ipc-handlers.ts` 2 处裸 `console.error` 替换为 `logger.error`
+
+### Phase 1.7 — 去重
+- `src/core/utils.ts` 导出 `sleep`（原为私有函数）
+- `onebot.ts` / `wechat.ts` 删除本地 `sleep` 副本，改为从 utils 导入
+
+### Phase 3 — 消息级 AI 反馈
+- 新建 `src/core/feedback.ts`：thumbs_up/thumbs_down/correction 数据模型
+- `ipc-schemas.ts` 新增 `feedbackSchema`
+- `ipc-handlers.ts` 新增 `feedback:submit` handler
+- `preload.ts` 新增 `submitFeedback` API
+- `MessageBubble.tsx` 新增 hover 反馈按钮（点赞/踩 + 纠错输入）
+- `pipeline.ts` 注入反馈上下文到 system prompt
+
+### 涉及文件
+- `src/core/role-templates.ts` (新建)
+- `src/core/feedback.ts` (新建)
+- `src/core/utils.ts` — 文件日志 + sleep 导出
+- `src/main/index.ts` — setLogFile 调用
+- `src/main/ipc-handlers.ts` — feedback handler + 去 console.error
+- `src/main/preload.ts` — submitFeedback API
+- `src/shared/ipc-schemas.ts` — feedbackSchema
+- `src/core/pipeline.ts` — 反馈上下文注入
+- `src/adapters/onebot.ts` — 去重 sleep
+- `src/adapters/wechat.ts` — 去重 sleep
+- `src/renderer/components/wizard/QuickStartStep.tsx` — 模板提取
+- `src/renderer/components/chat/MessageBubble.tsx` — 反馈 UI
+
+---
+
 # v0.0.1 开发日志
 
 ## 0. 项目重命名为「梦间 / Yumema」

@@ -1,4 +1,5 @@
 import { Users } from "lucide-react";
+import { Flex } from "@radix-ui/themes";
 import CardSelect from "../shared/CardSelect";
 
 const options = [
@@ -23,11 +24,11 @@ export default function PartnerGenderStep({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">你希望 TA 的性别是？</h2>
         <p className="text-sm text-muted-foreground">选择后会为你推荐关系类型，你也可以在下一步修改</p>
-      </div>
+      </Flex>
       <CardSelect
         options={options}
         value={data.partnerGender}
@@ -38,6 +39,6 @@ export default function PartnerGenderStep({
           });
         }}
       />
-    </div>
+    </Flex>
   );
 }

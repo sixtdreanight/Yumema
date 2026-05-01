@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/Select";
+import { Flex } from "@radix-ui/themes";
 
 const ZONES = [
   "Asia/Shanghai", "Asia/Tokyo", "Asia/Seoul", "Asia/Singapore",
@@ -16,11 +17,11 @@ export default function TimezoneStep({
   update: (d: Partial<{ timezone: string }>) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">你的时区是？</h2>
         <p className="text-sm text-muted-foreground">TA 会根据你的时间说早晚安</p>
-      </div>
+      </Flex>
       <Select value={data.timezone} onValueChange={(v) => update({ timezone: v })}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="选择时区..." />
@@ -52,6 +53,6 @@ export default function TimezoneStep({
           </SelectGroup>
         </SelectContent>
       </Select>
-    </div>
+    </Flex>
   );
 }

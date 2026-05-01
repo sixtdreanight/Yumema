@@ -1,11 +1,14 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, Notification, session } from "electron";
 import { join } from "node:path";
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
 import { registerIpcHandlers } from "./ipc-handlers.js";
-import { loadProfile } from "../core/config.js";
-import { logger } from "../core/utils.js";
+import { loadProfile, getDataRoot } from "../core/config.js";
+import { logger, setLogFile } from "../core/utils.js";
 import { startScheduler } from "../core/scheduler.js";
+import { napCatManager } from "./napcat-manager.js";
+import { weChatManager } from "./wechat-manager.js";
+import { writeFileSync, mkdirSync } from "node:fs";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -22,7 +25,7 @@ function createWindow(startRoute: "setup" | "chat") {
     show: false,
     webPreferences: {
       preload: join(__dirname, "../preload/preload.mjs"),
-      sandbox: false,
+      contextIsolation: true,
     },
   });
 
@@ -98,7 +101,44 @@ function setupAutoUpdater() {
   });
 }
 
+// ---- 全局崩溃处理 ----
+
+process.on("uncaughtException", (err) => {
+  const crashDir = join(getDataRoot(), "crashes");
+  try { mkdirSync(crashDir, { recursive: true }); } catch { /* ignore */ }
+  const crashFile = join(crashDir, `crash-${Date.now()}.log`);
+  try {
+    writeFileSync(crashFile, `${new Date().toISOString()} uncaughtException\n${err.stack || err.message}\n`);
+  } catch { /* ignore */ }
+  logger.error("Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection:", reason);
+});
+
+// 退出前清理子进程
+app.on("before-quit", () => {
+  napCatManager.stop();
+  weChatManager.stop();
+});
+
 app.whenReady().then(() => {
+  // CSP: restrict renderer to app-owned resources only
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [
+          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:*;",
+        ],
+      },
+    });
+  });
+
+  // 启用文件日志输出
+  setLogFile(join(getDataRoot(), "logs", "app.log"));
+
   registerIpcHandlers();
   setupAutoUpdater();
 
@@ -116,6 +156,11 @@ app.whenReady().then(() => {
       getActiveUsers: () => ["gui-user"],
       sendMessage: async (_userId: string, message: string) => {
         logger.info(`定时消息: ${message.slice(0, 40)}`);
+      },
+      showNotification: (title: string, body: string) => {
+        if (Notification.isSupported()) {
+          new Notification({ title, body, silent: false }).show();
+        }
       },
     });
   }

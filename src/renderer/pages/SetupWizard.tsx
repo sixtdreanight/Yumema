@@ -2,6 +2,7 @@ import { Flex, Text, Button, Progress } from "@radix-ui/themes";
 import { Sparkles, AlertTriangle } from "lucide-react";
 import { useSetupWizard } from "../hooks/useSetupWizard";
 import TitleBar from "../components/shared/TitleBar";
+import { GlassCard } from "../components/ui/GlassCard";
 import WelcomeStep from "../components/wizard/WelcomeStep";
 import QuickStartStep from "../components/wizard/QuickStartStep";
 import PartnerNameStep from "../components/wizard/PartnerNameStep";
@@ -35,34 +36,38 @@ export default function SetupWizard() {
   if (transitioning) {
     return (
       <Flex direction="column" align="center" justify="center" height="100vh" gap="4" className="bounce-in"
-        style={{ background: "var(--color-background)" }}>
-        <Flex width="64px" height="64px" align="center" justify="center"
-          style={{
-            borderRadius: "var(--radius-4)",
-            background: transitionTimedOut ? "var(--red-3)" : "var(--accent-3)",
-          }}>
-          {transitionTimedOut
-            ? <AlertTriangle size={32} color="var(--red-9)" />
-            : <Sparkles size={32} color="var(--accent-9)" />
-          }
-        </Flex>
-        <Flex direction="column" align="center" gap="1">
-          <Text size="4" weight="semibold">
-            {transitionTimedOut ? "启动超时" : "正在创建你的 AI 伴侣..."}
-          </Text>
-          <Text size="2" color="gray">
-            {transitionTimedOut ? "窗口切换可能未响应，请手动重试" : "一切准备就绪"}
-          </Text>
-        </Flex>
-        {transitionTimedOut && (
-          <Button size="2" onClick={saveProfile}>点击重试</Button>
-        )}
+        style={{ background: "transparent" }}>
+        <GlassCard padding="p-8" style={{ maxWidth: 380 }}>
+          <div className="text-center space-y-4">
+          <Flex width="64px" height="64px" align="center" justify="center" mx="auto"
+            style={{
+              borderRadius: "var(--radius-4)",
+              background: transitionTimedOut ? "var(--red-3)" : "var(--accent-3)",
+            }}>
+            {transitionTimedOut
+              ? <AlertTriangle size={32} color="var(--red-9)" />
+              : <Sparkles size={32} color="var(--accent-9)" />
+            }
+          </Flex>
+          <Flex direction="column" align="center" gap="1">
+            <Text size="4" weight="semibold">
+              {transitionTimedOut ? "启动超时" : "正在创建你的 AI 伴侣..."}
+            </Text>
+            <Text size="2" color="gray">
+              {transitionTimedOut ? "窗口切换可能未响应，请手动重试" : "一切准备就绪"}
+            </Text>
+          </Flex>
+          {transitionTimedOut && (
+            <Button size="2" onClick={saveProfile}>点击重试</Button>
+          )}
+          </div>
+        </GlassCard>
       </Flex>
     );
   }
 
   return (
-    <Flex direction="column" height="100vh" style={{ background: "var(--color-background)" }}>
+    <Flex direction="column" height="100vh" style={{ background: "transparent" }}>
       <TitleBar borderColor="transparent" background="transparent">
         <Flex direction="column" width="100%" gap="1">
           <Progress value={progress} size="1" variant="soft" radius="none" />
@@ -83,16 +88,16 @@ export default function SetupWizard() {
         </Flex>
       </TitleBar>
 
-      <Flex flexGrow="1" align="center" justify="center" px="6" py="4" style={{ overflowY: "auto" }}>
-        <div style={{ width: "100%", maxWidth: 384 }} key={step}>
+      <Flex flexGrow="1" align="center" justify="center" px="6" py="6" style={{ overflowY: "auto" }}>
+        <GlassCard padding="p-8" style={{ width: "100%", maxWidth: 448 }} key={step}>
           <div className="fade-in">
             <StepComponent {...(wizard as any)} />
           </div>
-        </div>
+        </GlassCard>
       </Flex>
 
-      <Flex height="56px" align="center" justify="between" px="5" flexShrink="0"
-        style={{ borderTop: "1px solid var(--gray-4)", background: "var(--color-background)" }}>
+      <GlassCard padding="px-6 py-3" className="flex items-center justify-between flex-shrink-0 h-[56px]">
+        <Flex align="center" justify="between" style={{ width: "100%" }}>
         <div>
           {step > 0 && (
             <Button variant="ghost" size="2" onClick={back}>← 上一步</Button>
@@ -110,7 +115,8 @@ export default function SetupWizard() {
             </Button>
           )}
         </div>
-      </Flex>
+        </Flex>
+      </GlassCard>
     </Flex>
   );
 }

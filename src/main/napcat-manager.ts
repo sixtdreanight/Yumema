@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, createWriteStream, writeFileSync, readdirSync, s
 import { randomBytes } from "node:crypto";
 import { homedir } from "node:os";
 import { get } from "node:https";
+import { getDataRoot } from "../core/config.js";
 
 // ---- 类型 ----
 
@@ -33,9 +34,11 @@ const GH_PROXY = "https://ghproxy.com";
 /** 各平台对应的 NapCatQQ asset 名称 */
 const ASSET_MAP: Record<string, string> = {
   "win32-x64": "NapCat.Shell.Windows.OneKey.zip",
+  "win32-arm64": "NapCat.Shell.Windows.OneKey.zip",
   "darwin-arm64": "NapCat.Shell.zip",
   "darwin-x64": "NapCat.Shell.zip",
   "linux-x64": "NapCat.Shell.zip",
+  "linux-arm64": "NapCat.Shell.zip",
 };
 
 const WS_PORT = 3001;
@@ -90,7 +93,7 @@ async function isQQInstalled(): Promise<boolean> {
 }
 
 function napCatDir(): string {
-  return join(app.getPath("userData"), "napcat");
+  return join(getDataRoot(), "napcat");
 }
 
 /** NapCatQQ zip 解压后可能有子目录，需要递归查找实际二进制路径 */

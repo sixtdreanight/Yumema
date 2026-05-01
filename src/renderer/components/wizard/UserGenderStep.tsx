@@ -1,4 +1,5 @@
 import { User } from "lucide-react";
+import { Flex } from "@radix-ui/themes";
 import CardSelect from "../shared/CardSelect";
 
 const options = [
@@ -14,16 +15,16 @@ export default function UserGenderStep({
   update: (d: Partial<{ userGender: string }>) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">你的性别是？</h2>
         <p className="text-sm text-muted-foreground">用于 AI 对你的称呼和代词引用</p>
-      </div>
+      </Flex>
       <CardSelect
         options={options}
         value={data.userGender}
         onChange={(v) => update({ userGender: v })}
       />
-    </div>
+    </Flex>
   );
 }

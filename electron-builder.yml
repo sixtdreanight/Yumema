@@ -43,6 +43,7 @@ win:
 
 nsis:
   oneClick: false
+  perMachine: false
   allowToChangeInstallationDirectory: true
 
 linux:
@@ -51,9 +52,25 @@ linux:
     - target: AppImage
       arch:
         - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
   category: Network
   maintainer: 梦夜十六 <erk163@163.com>
   description: 梦间 / Yumema — AI companion desktop app
+
+deb:
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libsecret-1-0
 
 afterSign: scripts/notarize.cjs
 

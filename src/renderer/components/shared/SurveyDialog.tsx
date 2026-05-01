@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Flex, Text } from "@radix-ui/themes";
 import Button from "../ui/Button";
+import { GlassCard, CardHeader, DialogOverlay } from "../ui/GlassCard";
+import ToggleTag from "../shared/ToggleTag";
 
 const STORAGE_KEY = "yumema_survey";
 const TRIGGER_COUNT = 20;
@@ -101,146 +103,125 @@ export default function SurveyDialog({ onClose }: { onClose: () => void }) {
 
   if (submitted) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm fade-in">
-        <div className="w-[480px] rounded-2xl glass border border-border shadow-xl scale-in p-8 text-center space-y-4">
-          <div style={{ fontSize: 48 }}>😍</div>
-          <h3 className="text-lg font-semibold">感谢你的反馈！</h3>
-          <p className="text-sm text-muted-foreground">
-            你的意见会帮助我们让 Yumema 变得更好
-          </p>
-          <Button variant="primary" onClick={onClose}>完成</Button>
+      <DialogOverlay onClose={onClose} offset="pt-0">
+        <div className="w-[480px] scale-in">
+          <GlassCard padding="p-8">
+            <div className="text-center space-y-4">
+              <div style={{ fontSize: 48 }}>😍</div>
+              <h3 className="text-lg font-semibold">感谢你的反馈！</h3>
+              <p className="text-sm text-muted-foreground">
+                你的意见会帮助我们让 Yumema 变得更好
+              </p>
+              <Button variant="primary" onClick={onClose}>完成</Button>
+            </div>
+          </GlassCard>
         </div>
-      </div>
+      </DialogOverlay>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm fade-in">
-      <div className="w-[480px] max-h-[85vh] rounded-2xl overflow-y-auto flex flex-col glass border border-border shadow-xl scale-in">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-2">
-          <div>
-            <h3 className="text-base font-semibold">帮助我们改进</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">你的反馈对 Yumema 很重要</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <DialogOverlay onClose={onClose} offset="pt-0">
+      <div className="w-[480px] scale-in">
+        <GlassCard padding="p-0">
+          <CardHeader title="帮助我们改进" onClose={onClose} />
+          <div className="max-h-[70vh] overflow-y-auto">
+          <Flex direction="column" px="6" py="5" gap="4">
+            {/* Satisfaction */}
+            <GlassCard variant="solid" padding="p-4">
+              <div className="space-y-3">
+              <label className="text-sm font-medium">你对 Yumema 的整体感受？</label>
+              <div className="flex items-center justify-center gap-3">
+                {EMOJI_RATINGS.map((r) => (
+                  <button
+                    key={r.value}
+                    onClick={() => setSatisfaction(r.value)}
+                    className="flex flex-col items-center gap-1 transition-all"
+                    style={{
+                      transform: satisfaction === r.value ? "scale(1.25)" : "scale(1)",
+                      opacity: satisfaction === 0 || satisfaction === r.value ? 1 : 0.5,
+                      filter: satisfaction === 0 || satisfaction === r.value ? "none" : "grayscale(0.5)",
+                    }}
+                  >
+                    <span style={{ fontSize: 28 }}>{r.emoji}</span>
+                    <span className="text-xs text-muted-foreground">{r.label}</span>
+                  </button>
+                ))}
+                </div>
+              </div>
+            </GlassCard>
 
-        <div className="px-6 pb-6 space-y-5">
-          {/* Satisfaction */}
-          <div className="bg-secondary/50 rounded-xl p-4 space-y-3">
-            <label className="text-sm font-medium">你对 Yumema 的整体感受？</label>
-            <div className="flex items-center justify-center gap-3">
-              {EMOJI_RATINGS.map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setSatisfaction(r.value)}
-                  className="flex flex-col items-center gap-1 transition-all"
-                  style={{
-                    transform: satisfaction === r.value ? "scale(1.25)" : "scale(1)",
-                    opacity: satisfaction === 0 || satisfaction === r.value ? 1 : 0.5,
-                    filter: satisfaction === 0 || satisfaction === r.value ? "none" : "grayscale(0.5)",
-                  }}
-                >
-                  <span style={{ fontSize: 28 }}>{r.emoji}</span>
-                  <span className="text-[10px] text-muted-foreground">{r.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+            {/* Features */}
+            <Flex direction="column" gap="2">
+              <Text size="1" color="gray">你主要使用哪些功能？（多选）</Text>
+              <div className="flex flex-wrap gap-3">
+                {FEATURES.map((f) => (
+                  <ToggleTag key={f} active={features.includes(f)} onClick={() => toggle(features, setFeatures, f)}>
+                    {f}
+                  </ToggleTag>
+                ))}
+              </div>
+            </Flex>
 
-          {/* Features */}
-          <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
-            <label className="text-sm font-medium">你主要使用哪些功能？（多选）</label>
-            <div className="flex flex-wrap gap-2">
-              {FEATURES.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => toggle(features, setFeatures, f)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-95"
-                  style={{
-                    background: features.includes(f) ? "var(--primary)" : "var(--background)",
-                    color: features.includes(f) ? "white" : "var(--muted-foreground)",
-                    border: features.includes(f) ? "1px solid var(--primary)" : "1px solid var(--border)",
-                  }}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
+            {/* Problems */}
+            <Flex direction="column" gap="2">
+              <Text size="1" color="gray">遇到了哪些问题？（多选）</Text>
+              <div className="flex flex-wrap gap-3">
+                {PROBLEMS.map((p) => (
+                  <ToggleTag key={p} active={problems.includes(p)} onClick={() => toggle(problems, setProblems, p)} variant="destructive">
+                    {p}
+                  </ToggleTag>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={otherProblem}
+                onChange={(e) => setOtherProblem(e.target.value)}
+                placeholder="其他问题..."
+                style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--radius-3)", fontSize: 14, background: "var(--background)", border: "1px solid var(--input)", color: "var(--foreground)", outline: "none" }}
+              />
+            </Flex>
 
-          {/* Problems */}
-          <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
-            <label className="text-sm font-medium">遇到了哪些问题？（多选）</label>
-            <div className="flex flex-wrap gap-2">
-              {PROBLEMS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => toggle(problems, setProblems, p)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-95"
-                  style={{
-                    background: problems.includes(p) ? "var(--destructive)" : "var(--background)",
-                    color: problems.includes(p) ? "white" : "var(--muted-foreground)",
-                    border: problems.includes(p) ? "1px solid var(--destructive)" : "1px solid var(--border)",
-                  }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-            <input
-              type="text"
-              value={otherProblem}
-              onChange={(e) => setOtherProblem(e.target.value)}
-              placeholder="其他问题..."
-              className="w-full px-3 py-2 rounded-xl text-sm bg-background border border-input text-foreground outline-none placeholder:text-muted-foreground mt-1"
-            />
-          </div>
+            {/* Missing features */}
+            <Flex direction="column" gap="2">
+              <Text size="1" color="gray">缺少什么功能？（选填）</Text>
+              <input
+                type="text"
+                value={missing}
+                onChange={(e) => setMissing(e.target.value)}
+                placeholder="例如：语音消息、多语言..."
+                style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--radius-3)", fontSize: 14, background: "var(--background)", border: "1px solid var(--input)", color: "var(--foreground)", outline: "none" }}
+              />
+            </Flex>
 
-          {/* Missing features */}
-          <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
-            <label className="text-sm font-medium">缺少什么功能？（选填）</label>
-            <input
-              type="text"
-              value={missing}
-              onChange={(e) => setMissing(e.target.value)}
-              placeholder="例如：语音消息、多语言..."
-              className="w-full px-3 py-2 rounded-xl text-sm bg-background border border-input text-foreground outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+            {/* Notes */}
+            <Flex direction="column" gap="2">
+              <Text size="1" color="gray">还有什么想说的？（选填）</Text>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="任何想法都可以告诉我们..."
+                rows={2}
+                className="w-full px-4 py-3 rounded-xl text-sm bg-background border border-input text-foreground outline-none resize-none placeholder:text-muted-foreground"
+              />
+            </Flex>
+          </Flex>
 
-          {/* Notes */}
-          <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
-            <label className="text-sm font-medium">还有什么想说的？（选填）</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="任何想法都可以告诉我们..."
-              rows={2}
-              className="w-full px-3 py-2 rounded-xl text-sm bg-background border border-input text-foreground outline-none resize-none placeholder:text-muted-foreground"
-            />
+          {/* Footer */}
+          <Flex px="6" pb="4" align="center" gap="3">
+            <Button variant="primary" className="flex-1 gradient-btn" onClick={handleSubmit} disabled={satisfaction === 0}>
+              提交反馈
+            </Button>
+            <button
+              onClick={handleDismiss}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+            >
+              不再提示
+            </button>
+          </Flex>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 pb-5 flex items-center gap-3">
-          <Button variant="primary" className="flex-1" onClick={handleSubmit}>
-            提交反馈
-          </Button>
-          <button
-            onClick={handleDismiss}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-          >
-            不再提示
-          </button>
-        </div>
+        </GlassCard>
       </div>
-    </div>
+    </DialogOverlay>
   );
 }

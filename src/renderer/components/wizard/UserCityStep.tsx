@@ -1,4 +1,5 @@
 import { Input } from "../ui/Input";
+import { Flex } from "@radix-ui/themes";
 
 export default function UserCityStep({
   data, update,
@@ -7,11 +8,11 @@ export default function UserCityStep({
   update: (d: Partial<{ userCity: string }>) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">你在哪个城市？</h2>
         <p className="text-sm text-muted-foreground">TA 会和你聊天气、本地话题</p>
-      </div>
+      </Flex>
       <Input
         type="text"
         value={data.userCity}
@@ -19,6 +20,6 @@ export default function UserCityStep({
         placeholder="例如：北京"
         autoFocus
       />
-    </div>
+    </Flex>
   );
 }

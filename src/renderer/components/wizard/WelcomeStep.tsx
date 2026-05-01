@@ -37,7 +37,7 @@ export default function WelcomeStep({ next }: { next: () => void }) {
         <Callout.Text>
           <Flex direction="column" gap="1">
             <Text weight="medium" size="1">使用前请阅读</Text>
-            <ul style={{ paddingLeft: 16, margin: 0, fontSize: 11, lineHeight: 1.6 }}>
+            <ul style={{ paddingLeft: 16, margin: 0, fontSize: 12, lineHeight: 1.6 }}>
               <li>AI 生成内容不代表作者立场，仅供学习娱乐</li>
               <li>QQ 使用第三方协议，建议使用小号</li>
               <li>AI API 按量计费，频繁聊天会产生费用</li>

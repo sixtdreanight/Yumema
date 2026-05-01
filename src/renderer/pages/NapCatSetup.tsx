@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Flex, Text, Button, IconButton, Heading } from "@radix-ui/themes";
+import { Flex, Text, Button } from "@radix-ui/themes";
 import { Cat, ArrowLeft } from "lucide-react";
 import TitleBar from "../components/shared/TitleBar";
+import { GlassCard } from "../components/ui/GlassCard";
 
 export default function NapCatSetup({ onBack }: { onBack: () => void }) {
   const [status, setStatus] = useState<Record<string, unknown>>({ status: "stopped", message: "" });
@@ -31,21 +32,28 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
 
   return (
     <Flex direction="column" height="100vh" className="page-enter"
-      style={{ background: "var(--color-background)" }}>
-      <TitleBar height={56} borderColor="var(--gray-4)" justify="start">
-        <IconButton variant="ghost" size="2" onClick={onBack} style={{ WebkitAppRegion: "no-drag" }}>
+      style={{ background: "transparent" }}>
+      <TitleBar height={56} borderColor="transparent" background="transparent" justify="start">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+          style={{ WebkitAppRegion: "no-drag" }}
+        >
           <ArrowLeft size={16} />
-        </IconButton>
-        <Heading size="3" ml="3">QQ 登录</Heading>
+        </button>
+        <h3 className="text-base font-semibold ml-3">QQ 登录</h3>
       </TitleBar>
 
       <Flex flexGrow="1" align="center" justify="center" p="8">
-        <Flex direction="column" align="center" gap="6" style={{ maxWidth: 384, width: "100%" }}>
+        <GlassCard padding="p-10" className="w-full" style={{ maxWidth: 420 }}>
+          <Flex direction="column" align="center" gap="6">
 
           {(s === "waiting-qr" || qrData) && (
             <Flex direction="column" align="center" gap="4" className="scale-in">
-              <Flex direction="column" align="center" gap="3" p="4"
-                style={{ border: "1px solid var(--gray-4)", borderRadius: "var(--radius-4)", background: "var(--gray-1)" }}>
+              <div
+                style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-4)", background: "var(--secondary)" }}>
+                <div className="p-5">
+                <Flex direction="column" align="center" gap="3">
                 <Flex width="144px" height="144px" align="center" justify="center"
                   style={{ background: "var(--gray-3)", borderRadius: "var(--radius-3)" }}>
                   <Text size="1" color="gray">
@@ -56,6 +64,8 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
                   {qrData ? "请用手机 QQ 扫描" : "准备中..."}
                 </Text>
               </Flex>
+                </div>
+              </div>
               <Text size="2" color="gray">请使用手机 QQ 扫描二维码登录</Text>
             </Flex>
           )}
@@ -101,7 +111,7 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
                 <Cat size={28} color="var(--accent-9)" />
               </Flex>
               <Flex direction="column" align="center" gap="1">
-                <Heading size="5">连接 QQ 机器人</Heading>
+                <h2 className="text-lg font-semibold">连接 QQ 机器人</h2>
                 <Text size="2" color="gray" align="center">
                   启动后需要扫码登录 QQ<br />建议使用小号，存在封号风险
                 </Text>
@@ -114,7 +124,8 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
               </Text>
             </Flex>
           )}
-        </Flex>
+          </Flex>
+        </GlassCard>
       </Flex>
     </Flex>
   );

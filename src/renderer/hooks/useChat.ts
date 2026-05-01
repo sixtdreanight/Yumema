@@ -28,12 +28,26 @@ export function useChat() {
   const lastKeystrokeRef = useRef(0);
   const typingRef = useRef(false);
 
-  // ---- IPC 事件 ----
+  // ---- IPC 事件 + 初始化 ----
   useEffect(() => {
+    // 加载 profile
     window.api.getState().then((state: unknown) => {
       const s = state as { profile: Record<string, unknown> | null };
       if (s.profile) setProfile(s.profile);
     });
+
+    // 恢复历史聊天记录
+    window.api.loadHistory().then((history: unknown) => {
+      const turns = history as Array<{ role: string; content: string; timestamp: string }>;
+      if (Array.isArray(turns) && turns.length > 0) {
+        const restored: ChatMessage[] = turns.map((t) => ({
+          role: t.role === "assistant" ? "partner" : "user",
+          content: t.content,
+          time: t.timestamp,
+        }));
+        setMessages(restored);
+      }
+    }).catch(() => {});
 
     const unsubTyping = window.api.on("chat:typing", (data: unknown) => {
       const d = data as { active: boolean };
@@ -81,7 +95,11 @@ export function useChat() {
     typingRef.current = true;
     enterHistoryRef.current = [];
     try {
-      await window.api.sendMessage(msgs.join("\n"));
+      const result = await window.api.sendMessage(msgs.join("\n"));
+      if (result && typeof result === "object" && "success" in result && !result.success) {
+        setTyping(false);
+        typingRef.current = false;
+      }
     } catch {
       setTyping(false);
       typingRef.current = false;
@@ -117,16 +135,17 @@ export function useChat() {
       setQueueSize(0);
 
       const now = new Date().toISOString();
-      // eslint-disable-next-line @typescript-eslint/no-loop-func
-      for (const msg of batch) {
-        setMessages((prev) => [...prev, { role: "user", content: msg, time: now }]);
-        incrementMsgCount();
-      }
+      // 批量添加消息，避免 for 循环中逐条 setState
+      const newMessages = batch.map((msg) => ({ role: "user" as const, content: msg, time: now }));
+      setMessages((prev) => [...prev, ...newMessages]);
+      for (let i = 0; i < batch.length; i++) incrementMsgCount();
 
       // 排队消息直接发，不再 debounce（已经等过了）
       flushPending(batch);
     }
-  }, [typing, messages, flushPending]);
+    // messages 不加入依赖，只监听 typing 状态切换
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typing, flushPending]);
 
   // ---- 气泡立即上屏 ----
   const showUserBubble = useCallback((content: string) => {

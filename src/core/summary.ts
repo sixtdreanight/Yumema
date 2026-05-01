@@ -54,3 +54,58 @@ export function formatSummaryBlock(summary: string): string {
     "",
   ].join("\n");
 }
+
+// ---- Token 估算 ----
+
+/**
+ * 粗略估算消息列表的 token 用量。
+ *
+ * 混合中英文启发式：
+ * - 中文字符 ≈ 2 chars/token
+ * - 英文单词 ≈ 1.3 tokens/word
+ * - 保守估算：总字符数 / 2.5
+ *
+ * 用于动态摘要触发（非精确计数，不需要 tiktoken）。
+ */
+export function estimateTokenUsage(
+  messages: Array<{ role: string; content: string }>,
+): number {
+  let totalChars = 0;
+  for (const msg of messages) {
+    // 角色标记开销 ~4 tokens
+    totalChars += msg.content.length + 8;
+  }
+  return Math.ceil(totalChars / 2.5);
+}
+
+/**
+ * 判断是否需要触发对话摘要。
+ * 当历史消息的估算 token 用量超过上下文窗口的 60% 时触发。
+ */
+export function shouldTriggerSummary(
+  messages: Array<{ role: string; content: string }>,
+  maxContextTokens: number,
+): boolean {
+  const estimated = estimateTokenUsage(messages);
+  const threshold = maxContextTokens * 0.6;
+  return estimated > threshold;
+}
+
+/**
+ * 计算可保留的最近消息数，使 token 用量不超过窗口的 80%。
+ * 用于从旧消息中裁剪，为 AI 回复预留空间。
+ */
+export function computeHistoryLimit(
+  messages: Array<{ role: string; content: string }>,
+  maxContextTokens: number,
+): number {
+  const budget = maxContextTokens * 0.8;
+  let used = 0;
+  // 从最新消息开始倒推
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const tokens = Math.ceil(messages[i].content.length / 2.5) + 4;
+    if (used + tokens > budget) return messages.length - i;
+    used += tokens;
+  }
+  return messages.length;
+}

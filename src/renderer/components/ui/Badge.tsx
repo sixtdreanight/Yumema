@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "src/renderer/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center gap-2 rounded-full border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
@@ -24,8 +24,8 @@ const badgeVariants = cva(
         outline: "text-foreground",
       },
       size: {
-        sm: "px-2 py-0.5 text-[11px]",
-        md: "px-3 py-1 text-xs",
+        sm: "px-2 py-1 text-xs",
+        md: "px-3 py-2 text-xs",
       },
     },
     defaultVariants: {
@@ -58,7 +58,7 @@ function Badge({ className, variant, size, dot, children, ...props }: BadgeProps
       {dot && (
         <span
           className={cn(
-            "w-1.5 h-1.5 rounded-full",
+            "w-2 h-2 rounded-full",
             variant ? dotColors[variant] : dotColors.default,
           )}
         />

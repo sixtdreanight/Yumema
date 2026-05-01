@@ -1,6 +1,8 @@
 import { Sparkles } from "lucide-react";
+import { Flex } from "@radix-ui/themes";
 import Button from "../ui/Button";
 import { Badge } from "../ui/Badge";
+import { GlassCard } from "../ui/GlassCard";
 
 export default function SummaryStep({
   data, saveProfile, saving, error,
@@ -30,23 +32,25 @@ export default function SummaryStep({
   ] as Array<[string, string]>).filter(([, v]) => v);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">确认信息</h2>
         </div>
         <p className="text-sm text-muted-foreground">检查一下，没问题就创建你的 TA</p>
-      </div>
+      </Flex>
 
-      <div className="rounded-xl p-5 space-y-3 bg-primary/5 border border-primary/20">
+      <GlassCard variant="solid" padding="p-4">
+        <div className="space-y-3">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
             <span className="font-semibold text-right">{value}</span>
           </div>
         ))}
-      </div>
+        </div>
+      </GlassCard>
 
       {error && (
         <p className="text-xs text-destructive text-center">{error}</p>
@@ -61,6 +65,6 @@ export default function SummaryStep({
       >
         {saving ? "创建中..." : "创建我的 Yumema"}
       </Button>
-    </div>
+    </Flex>
   );
 }

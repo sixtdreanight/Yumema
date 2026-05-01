@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { Flex } from "@radix-ui/themes";
 import { Input, Field } from "../ui/Input";
 import { Badge } from "../ui/Badge";
 import Button from "../ui/Button";
+import { GlassCard } from "../ui/GlassCard";
 
 const STATUS_LABELS: Record<string, string> = {
   stopped: "未启动",
@@ -43,13 +45,14 @@ export default function QQConfigStep({
   const badgeVariant = isConnected ? "success" : napCatStatus === "error" ? "error" : "default";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">配置 QQ 机器人</h2>
         <p className="text-sm text-muted-foreground">让 TA 能在 QQ 上和你聊天</p>
-      </div>
+      </Flex>
 
-      <div className="rounded-xl p-4 space-y-3 bg-card border shadow-sm">
+      <GlassCard variant="solid" padding="p-4">
+        <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold">NapCatQQ</span>
           <Badge variant={badgeVariant} dot>
@@ -73,9 +76,10 @@ export default function QQConfigStep({
         >
           {napCatStatus === "stopped" ? "启动 NapCatQQ" : isWorking ? "启动中..." : "重新启动"}
         </Button>
-      </div>
+        </div>
+      </GlassCard>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Flex direction="column" gap="3">
         <Field label="WebSocket 地址（可选，自动填充）">
           <Input
             type="text"
@@ -92,11 +96,11 @@ export default function QQConfigStep({
             placeholder="自动生成"
           />
         </Field>
-      </div>
+      </Flex>
 
       <p className="text-xs text-center text-muted-foreground">
         也可稍后在设置中配置，或使用终端模式不依赖 QQ
       </p>
-    </div>
+    </Flex>
   );
 }

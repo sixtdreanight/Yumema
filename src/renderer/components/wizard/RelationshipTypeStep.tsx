@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { Flex } from "@radix-ui/themes";
 import CardSelect from "../shared/CardSelect";
 
 export default function RelationshipTypeStep({
@@ -23,14 +24,14 @@ export default function RelationshipTypeStep({
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">你希望 TA 是你的？</h2>
         <p className="text-sm text-muted-foreground">
           {recommended ? "已根据你的选择推荐，你也可以换一个" : "选择你想要的伴侣角色"}
         </p>
-      </div>
+      </Flex>
       <CardSelect options={options} value={data.relationshipType} onChange={(v) => update({ relationshipType: v })} />
-    </div>
+    </Flex>
   );
 }

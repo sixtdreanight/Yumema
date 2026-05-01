@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Button from "../ui/Button";
+import { GlassCard } from "../ui/GlassCard";
 
 export default function UpdateToast() {
   const [visible, setVisible] = useState(false);
@@ -48,7 +49,8 @@ export default function UpdateToast() {
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 fade-in">
-      <div className="glass rounded-2xl shadow-lg px-5 py-3 flex items-center gap-4 min-w-[320px] border border-border">
+      <GlassCard padding="p-4" className="min-w-[320px]">
+        <div className="flex items-center gap-4">
         <div className="flex-1">
           {status === "available" && (
             <div className="text-sm">
@@ -89,7 +91,8 @@ export default function UpdateToast() {
             <Button variant="primary" size="sm" onClick={handleInstall}>重启</Button>
           )}
         </div>
-      </div>
+        </div>
+      </GlassCard>
     </div>
   );
 }

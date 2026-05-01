@@ -1,160 +1,24 @@
 /**
- * 消息处理管道 — 将消息从输入到输出的完整流程
+ * 消息处理管道 — 编排器
  *
- * 流程: 安全检查 → 搜索检测 → 记忆加载 → 情绪检测 →
- *       构建提示词 → AI 生成 → 输出检查 → 记忆保存 → 返回回复
+ * 流程: PreProcess → Memory → Context → Generation → PostProcess
+ *
+ * 每个 stage 是独立可测试的纯函数（或注入依赖）。
+ * 参考 Letta OS-style memory + LangGraph Checkpointer/Store 模式。
  */
 
-import { generateText } from "ai";
 import type { LanguageModel } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createOpenAI } from "@ai-sdk/openai";
 import type { AppConfig, Profile } from "./config.js";
-import { logger, retry } from "./utils.js";
-import { checkInput, buildRefusalPrompt, checkOutput, fallbackRefusal } from "./safety.js";
-import { needsSearch, extractSearchQuery, searchWeb } from "./search.js";
-import {
-  buildSystemPrompt,
-  buildTimeContext,
-  getTodayMood,
-  detectSadness,
-  buildEmotionalSupportHint,
-  buildCrisisHint,
-  isConversationDying,
-  suggestTopic,
-  createSession,
-  updateSession,
-  shouldRemindBreak,
-  buildBreakReminder,
-  type SessionState,
-} from "./girlfriend.js";
-import {
-  getOrCreateState,
-  calculateAffectionDelta,
-  updateAffection,
-  handleConfession,
-  checkBoundaryViolation,
-  handleBoundaryViolation as processBoundaryViolation,
-  executeBreakup,
-  stayFriends,
-  buildStageGuidance,
-  saveRelationshipState,
-  STAGE_LABELS,
-} from "./relationship.js";
-import {
-  buildMessageHistory,
-  saveShortTerm,
-  buildMemoryContext,
-  loadShortTerm,
-  updateFact,
-  loadLearnedInterests,
-  loadSummary,
-  saveSummary,
-  extractFactsFromConversation,
-  analyzeUserInterests,
-} from "./memory.js";
-import {
-  generateConversationSummary,
-  formatSummaryBlock,
-} from "./summary.js";
+import { logger } from "./utils.js";
+import { saveShortTerm } from "./memory.js";
+import { splitForChat } from "./split.js";
+import { preProcessStage } from "./stages/preprocess.js";
+import { memoryStage, type SummaryState } from "./stages/memory.js";
+import { contextStage } from "./stages/context.js";
+import { generationStage, createAIProvider } from "./stages/generation.js";
+import { postProcessStage } from "./stages/postprocess.js";
 
-// ---- AI 提供商工厂 ----
-
-/** 复用 vibe-coding-agent 的三选一 AI 提供商模式 */
-export function createAIProvider(config: AppConfig["ai"]): LanguageModel {
-  const { provider, model, apiKey, baseUrl } = config;
-
-  if (provider === "anthropic") {
-    const anthropic = createAnthropic({ apiKey });
-    return anthropic(model);
-  }
-
-  if (provider === "openai") {
-    const openai = createOpenAI({ apiKey });
-    return openai.chat(model);
-  }
-
-  // Ollama — OpenAI-compatible API at localhost
-  if (provider === "ollama") {
-    const openai = createOpenAI({ apiKey: apiKey || "ollama", baseURL: baseUrl || "http://localhost:11434/v1" });
-    return openai.chat(model);
-  }
-
-  // openai-compatible
-  const openai = createOpenAI({ apiKey, baseURL: baseUrl });
-  return openai.chat(model);
-}
-
-async function callAI(
-  model: LanguageModel,
-  systemPrompt: string,
-  history: Array<{ role: "user" | "assistant"; content: string }>,
-  userMessage: string,
-  config: AppConfig,
-): Promise<string> {
-  const result = await retry(() =>
-    generateText({
-      model,
-      system: systemPrompt,
-      messages: [
-        ...history,
-        { role: "user" as const, content: userMessage },
-      ],
-      maxOutputTokens: config.ai.maxTokens,
-      temperature: config.ai.temperature,
-    }),
-  );
-  return result.text || "";
-}
-
-// ---- 消息拆分 ----
-
-/**
- * 将长文本按句子边界拆成短气泡，模拟真人微信聊天
- * 一句一气泡，每段不超过 50 字
- */
-export function splitForChat(text: string): string[] {
-  if (!text || text.length === 0) return [""];
-
-  // 移除中文全角括号内容（心理/动作描写残留），保留半角括号（颜文字用）
-  let cleaned = text.replace(/（[^）]*）/g, "");
-  // 移除 *动作* _心理_ 标记
-  cleaned = cleaned.replace(/\*[^*]+\*/g, "").replace(/_[^_]+_/g, "");
-
-  // 按中文标点拆分
-  const meaningful = (s: string) => {
-    const t = s.trim();
-    if (t.length === 0) return false;
-    // 过滤无意义的孤立英文句点（AI 偶尔会输出 stray dot）
-    if (t === ".") return false;
-    return true;
-  };
-  const sentences = cleaned
-    .split(/(?<=[。！？…\.!\?～~\n])\s*/)
-    .map((s) => s.trim())
-    .filter(meaningful);
-
-  if (sentences.length === 0) return [cleaned.trim() || text];
-
-  // 每段不超过 50 字
-  const result: string[] = [];
-  for (const s of sentences) {
-    if (s.length <= 50) {
-      result.push(s);
-    } else {
-      // 按逗号/分号二次拆分
-      const parts = s
-        .split(/(?<=[，,；;])/)
-        .map((p) => p.trim())
-        .filter(meaningful);
-      result.push(...parts);
-    }
-  }
-
-  return result.length > 0 ? result : [text];
-}
-
-// ---- 管道 ----
+export { createAIProvider, splitForChat };
 
 export interface PipelineContext {
   model: LanguageModel;
@@ -162,26 +26,51 @@ export interface PipelineContext {
   profile: Profile;
 }
 
-/** 每个用户的会话状态，用于防沉迷和冷场检测 */
-const sessions = new Map<string, SessionState>();
+/** 每个用户的摘要状态 */
+const summaryStates = new Map<string, SummaryState>();
 
-/** 每个用户的对话轮次计数和摘要状态 */
-const summaryState = new Map<string, { totalTurns: number; lastSummaryTurn: number }>();
+/** 会话最后活跃时间，用于 TTL 淘汰 */
+const lastActive = new Map<string, number>();
 
-function getSession(userId: string): SessionState {
-  let session = sessions.get(userId);
-  if (!session) {
-    session = createSession();
-    sessions.set(userId, session);
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const SESSION_MAX = 100;
+
+export function cleanupSessions(): void {
+  const now = Date.now();
+
+  for (const [userId, ts] of lastActive) {
+    if (now - ts > SESSION_TTL_MS) {
+      summaryStates.delete(userId);
+      lastActive.delete(userId);
+    }
   }
-  return session;
+
+  if (summaryStates.size > SESSION_MAX) {
+    const sorted = [...lastActive.entries()]
+      .sort((a, b) => a[1] - b[1]);
+    for (const [userId] of sorted.slice(0, summaryStates.size - SESSION_MAX)) {
+      summaryStates.delete(userId);
+      lastActive.delete(userId);
+    }
+  }
+}
+
+function getSummaryState(userId: string): SummaryState | undefined {
+  const state = summaryStates.get(userId);
+  lastActive.set(userId, Date.now());
+  return state;
+}
+
+function setSummaryState(userId: string, state: SummaryState): void {
+  summaryStates.set(userId, state);
+  lastActive.set(userId, Date.now());
 }
 
 /**
- * 处理一条消息，返回 AI 生成的回复
+ * 处理一条消息，返回 AI 生成的回复气泡数组
  *
- * 这是整个消息处理的核心入口：
- * QQ 适配器收到消息 → 调用此函数 → 返回回复 → 适配器发送
+ * 编排 5 个独立 stage:
+ *   PreProcess → Memory → Context → Generation → PostProcess
  */
 export async function processMessage(
   userId: string,
@@ -189,404 +78,51 @@ export async function processMessage(
   ctx: PipelineContext,
 ): Promise<string[]> {
   const { model, config, profile } = ctx;
-  const nick = profile.user_nickname;
 
-  // 快捷保存并返回（确保所有路径都保存对话记录）
-  const saveAndReturn = (reply: string): string[] => {
-    saveShortTerm(userId, userMessage, reply);
-    return splitForChat(reply);
-  };
+  // 定期清理过期会话
+  cleanupSessions();
 
-  // 1. 安全检查 — 输入层
-  const safetyResult = checkInput(userMessage);
-  if (!safetyResult.ok) {
-    return saveAndReturn(await generateRefusal(model, profile, safetyResult.reason || "illegal"));
+  // Stage 1: PreProcess — 安全 + 关系 + 搜索
+  const pre = await preProcessStage({ userId, userMessage, model, config, profile });
+  if (pre.earlyReturn !== null) {
+    saveShortTerm(userId, userMessage, pre.earlyReturn);
+    return splitForChat(pre.earlyReturn);
   }
 
-  // 2. 关系管理 — 告白检测
-  const relState = getOrCreateState(profile.relationship_mode);
-
-  // 用户告白
-  if (/(告白|表白|我喜欢你|我爱你|在一起|做我(女朋友|男朋友)|交往)/.test(userMessage)) {
-    if (relState.stage === "lover") {
-      return saveAndReturn(`${profile.user_nickname}...我们不是早就在一起了吗？傻瓜~ ❤️`);
-    }
-
-    if (profile.relationship_mode === "direct") {
-      return saveAndReturn(`我们已经在一起了呀，${profile.user_nickname}~`);
-    }
-
-    const result = handleConfession(relState);
-    if (result.success) {
-      logger.info(`告白成功! 阶段: ${STAGE_LABELS[relState.stage]}`);
-      return saveAndReturn(result.message);
-    } else {
-      logger.info(`告白失败。阶段: ${STAGE_LABELS[relState.stage]}`);
-      return saveAndReturn(
-        result.message +
-        "\n\n[提示] 你可以选择: 继续做朋友聊下去 / 发送「删好友」结束这段关系"
-      );
-    }
-  }
-
-  // 用户选择删好友（告白失败后）
-  if (/删好友/.test(userMessage)) {
-    if (relState.breakupPending) {
-      executeBreakup(relState);
-      return saveAndReturn("好的...那就这样吧。再见。");
-    }
-    if (relState.confessions.length > 0 && !relState.confessions[relState.confessions.length - 1].success) {
-      // 上次告白失败后选择删除
-      executeBreakup(relState);
-      return saveAndReturn("嗯...我尊重你的选择。谢谢你曾经喜欢过我。再见。");
-    }
-    // 其他情况 — 确认
-    return saveAndReturn("你确定要删除我吗？这之后我们就不会再聊天了。如果确定的话，再发一次「确认删除」。");
-  }
-
-  if (/确认删除/.test(userMessage)) {
-    executeBreakup(relState);
-    return saveAndReturn("好的。祝你一切都好。再见。");
-  }
-
-  // 越线检测
-  if (checkBoundaryViolation(userMessage)) {
-    const boundary = processBoundaryViolation(relState);
-    if (boundary.shouldBreakup) {
-      return saveAndReturn(
-        boundary.warningMessage +
-        "\n\n[提示] 这是最后一次警告。你可以选择: 发送「我改」来挽回 / 发送「分手吧」结束关系"
-      );
-    }
-    return saveAndReturn(boundary.warningMessage);
-  }
-
-  // 用户选择分手/挽回
-  if (/(分手|分手吧|结束吧|我们不合适|我们分手)/.test(userMessage)) {
-    if (relState.breakupPending) {
-      return saveAndReturn(
-        "我尊重你的决定。分手之后我们可以选择继续做朋友，或者就此告别。\n\n" +
-        "发送「做朋友」保持联系 / 发送「删好友」彻底告别"
-      );
-    }
-    // 不是分手流程中的分手请求 — 可能是闹别扭
-    return saveAndReturn(`${profile.user_nickname}...你真的想好了吗？如果只是一时冲动，我们可以好好聊聊。如果你真的决定了，我会尊重你。但请再确认一次——发送「我确定要分手」。`);
-  }
-
-  if (/我确定要分手/.test(userMessage)) {
-    return saveAndReturn(
-      "好。谢谢我们曾经拥有过的时光。\n\n" +
-      "发送「做朋友」保持联系 / 发送「删好友」彻底告别"
-    );
-  }
-
-  if (/做朋友/.test(userMessage) && relState.breakupPending) {
-    stayFriends(relState);
-    return saveAndReturn("好...做朋友也好。谢谢你。我们重新开始吧，以朋友的身份。");
-  }
-
-  if (/我改/.test(userMessage) && relState.breakupPending) {
-    relState.breakupPending = false;
-    relState.boundaryWarnings = Math.max(0, relState.boundaryWarnings - 1);
-    saveRelationshipState(relState);
-    return saveAndReturn("好。我相信你。我们重新开始吧。");
-  }
-
-  // 更新好感度（养成模式且非恋人阶段）
-  if (relState.mode === "slow_burn" && relState.stage !== "lover") {
-    const delta = calculateAffectionDelta(userMessage, []);
-    updateAffection(relState, delta);
-  }
-
-  // 3. 联网搜索检测
-  let searchResults: string | undefined;
-  if (needsSearch(userMessage)) {
-    const query = extractSearchQuery(userMessage);
-    searchResults = await searchWeb(query);
-    logger.debug(`搜索完成: ${searchResults.length} 字符`);
-  }
-
-  // 3. 加载记忆
-  const history = buildMessageHistory(userId, config.memory.maxHistoryTurns);
-  const memoryContext = buildMemoryContext(config.memory.maxFactsInContext);
-  const learnedInterests = loadLearnedInterests().interests;
-
-  // 对话摘要 — 当历史超过阈值时生成/更新
-  const fullHistory = loadShortTerm(userId, 9999);
-  let state = summaryState.get(userId);
-  if (!state) {
-    state = { totalTurns: Math.floor(fullHistory.length / 2), lastSummaryTurn: 0 };
-    summaryState.set(userId, state);
-  }
-  state.totalTurns++;
-
-  let conversationSummary: string | undefined;
-  const SUMMARY_FIRST_TRIGGER = 12;  // 超过 12 轮首次生成
-  const SUMMARY_UPDATE_INTERVAL = 6; // 每 6 轮更新
-
-  if (state.totalTurns >= SUMMARY_FIRST_TRIGGER) {
-    const existingSummary = loadSummary(userId);
-    if (!existingSummary) {
-      // 首次生成摘要
-      const oldTurns = fullHistory.slice(0, -(config.memory.maxHistoryTurns * 2));
-      if (oldTurns.length >= 6) {
-        const summary = await generateConversationSummary(oldTurns, async (prompt) => {
-          const result = await generateText({
-            model,
-            system: "你是一个摘要助手，请按要求生成对话摘要。",
-            messages: [{ role: "user", content: prompt }],
-            maxOutputTokens: 300,
-            temperature: 0.5,
-          });
-          return result.text || "";
-        });
-        if (summary) {
-          saveSummary(userId, summary);
-          state.lastSummaryTurn = state.totalTurns;
-          conversationSummary = formatSummaryBlock(summary);
-        }
-      }
-    } else if (state.totalTurns - state.lastSummaryTurn >= SUMMARY_UPDATE_INTERVAL) {
-      // 增量更新摘要
-      const sinceLastSummary = fullHistory.slice(-(SUMMARY_UPDATE_INTERVAL * 4));
-      const summary = await generateConversationSummary(sinceLastSummary, async (prompt) => {
-        const result = await generateText({
-          model,
-          system: "你是一个摘要助手，请按要求生成对话摘要。",
-          messages: [{ role: "user", content: prompt }],
-          maxOutputTokens: 300,
-          temperature: 0.5,
-        });
-        return result.text || "";
-      });
-      if (summary) {
-        saveSummary(userId, summary);
-        state.lastSummaryTurn = state.totalTurns;
-      }
-      conversationSummary = formatSummaryBlock(existingSummary);
-    } else {
-      conversationSummary = formatSummaryBlock(existingSummary);
-    }
-  }
-
-  // 4. 会话状态
-  const session = getSession(userId);
-  updateSession(session, userMessage);
-
-  // 5. 时间 + 心情
-  const timeContext = buildTimeContext(profile.user_timezone);
-  const todayMood = getTodayMood();
-
-  // 6. 情绪检测
-  const emotion = detectSadness(userMessage);
-
-  // 7. 冷场检测 — 如果对话变冷，注入话题建议
-  const recentUserMsgs = buildMessageHistory(userId, 5)
-    .filter((m) => m.role === "user")
-    .map((m) => m.content);
-  const isDying = isConversationDying([...recentUserMsgs, userMessage]);
-
-  // 8. 构建系统提示词
-  let systemPrompt = buildSystemPrompt(
-    profile,
-    timeContext,
-    todayMood,
-    memoryContext,
-    learnedInterests.length > 0 ? learnedInterests : undefined,
-    searchResults,
-    undefined, // refusalContext
-    session,
-    conversationSummary,
+  // Stage 2: Memory — 记忆加载 + 摘要
+  const mem = await memoryStage(
+    { userId, userMessage, model, config },
+    getSummaryState(userId),
   );
+  setSummaryState(userId, mem.summaryState);
 
-  // 养成模式: 注入关系阶段行为指引
-  if (relState.mode === "slow_burn") {
-    const stageGuidance = buildStageGuidance(relState, profile);
-    if (stageGuidance) {
-      systemPrompt += "\n\n" + stageGuidance;
-    }
-  }
+  // Stage 3: Context — 系统提示词组装
+  const ctxOut = contextStage({
+    userId, userMessage, profile, config,
+    searchResults: pre.searchResults,
+    memoryContext: mem.memoryContext,
+    learnedInterests: mem.learnedInterests,
+    conversationSummary: mem.conversationSummary,
+    relState: pre.relState,
+  });
 
-  // 冷场 — 提示 AI 换个话题或让用户休息
-  if (isDying) {
-    const topic = suggestTopic(profile, learnedInterests);
-    systemPrompt += `\n\n对话有点冷场了。${topic}。如果觉得对方真的累了，就温柔地说'要不你去歇会儿吧'。不要勉强尬聊。`;
-    logger.debug("检测到冷场，注入话题建议");
-  }
+  // Stage 4: Generation — AI 调用 + 备用模型 + 输出检查
+  const gen = await generationStage({
+    userMessage,
+    systemPrompt: ctxOut.systemPrompt,
+    history: mem.history,
+    model,
+    config,
+  });
 
-  // 防沉迷 — 长时间聊天后提醒休息
-  if (shouldRemindBreak(session)) {
-    systemPrompt += buildBreakReminder(nick, timeContext);
-    logger.debug("防沉迷提醒");
-  }
-
-  // 情绪支持注入
-  if (emotion === "sad") {
-    systemPrompt += buildEmotionalSupportHint(nick);
-  } else if (emotion === "crisis") {
-    systemPrompt += buildCrisisHint(nick);
-    logger.warn(`用户 ${userId} 触发危机关键词`);
-  }
-
-  // 10. 调用 AI 生成回复
-  let reply: string;
-  try {
-    reply = await callAI(model, systemPrompt, history, userMessage, config);
-  } catch (err) {
-    logger.error("AI 调用失败:", err);
-    // 尝试备用模型
-    const bak = config.ai;
-    if (bak.backupModel || bak.backupProvider) {
-      try {
-        const backupModel = createAIProvider({
-          provider: bak.backupProvider || bak.provider,
-          model: bak.backupModel || bak.model,
-          apiKey: bak.backupApiKey || bak.apiKey,
-          baseUrl: bak.backupBaseUrl || bak.baseUrl,
-          maxTokens: bak.maxTokens,
-          temperature: bak.temperature,
-        });
-        logger.info(`主模型失败，切换备用模型: ${bak.backupProvider}/${bak.backupModel}`);
-        reply = await callAI(backupModel, systemPrompt, history, userMessage, config);
-      } catch (bakErr) {
-        logger.error("备用模型也失败:", bakErr);
-        return saveAndReturn(profile.custom_style?.emoticons
-          ? "呜...刚才走神了，再说一遍好吗？(｡•́︿•̀｡)"
-          : "呜...刚才走神了，再说一遍好吗？");
-      }
-    } else {
-      return saveAndReturn(profile.custom_style?.emoticons
-        ? "呜...刚才走神了，再说一遍好吗？(｡•́︿•̀｡)"
-        : "呜...刚才走神了，再说一遍好吗？");
-    }
-  }
-
-  // 11. 安全检查 — 输出层
-  const outputCheck = checkOutput(reply);
-  if (!outputCheck.ok) {
-    if (outputCheck.cleaned !== undefined) {
-      reply = outputCheck.cleaned;
-    } else {
-      reply = fallbackRefusal();
-    }
-  }
-
-  // 12. 输出前自检 — 检查回复是否承接用户话题
-  const socialShortReplies = ["嗯", "哦", "好", "行", "哈哈", "是的", "对的", "知道了", "没问题", "okk"];
-  if (!socialShortReplies.includes(userMessage.trim())) {
-    try {
-      const checkResult = await generateText({
-        model,
-        system: "判断以下回复是否直接回应了用户消息的核心话题。只回答 YES 或 NO。",
-        messages: [{
-          role: "user" as const,
-          content: `用户消息：${userMessage}\n\nAI回复：${reply}\n\n这个回复是否直接回应了用户的核心话题？只回答 YES 或 NO。`,
-        }],
-        maxOutputTokens: 5,
-        temperature: 0,
-      });
-
-      const isOnTopic = checkResult.text?.trim().toUpperCase().startsWith("YES");
-      if (!isOnTopic) {
-        logger.warn("输出自检未通过，重新生成");
-        const retryPrompt = systemPrompt + "\n\n上一轮回复偏离了用户话题。这次请务必直接回应用户最后一条消息的内容，不要岔开话题。";
-        try {
-          reply = await callAI(model, retryPrompt, history, userMessage, config);
-        } catch {
-          logger.warn("重试生成失败，使用原回复");
-        }
-      }
-    } catch {
-      // 自检失败不影响主流程
-    }
-  }
-
-  // 13. 保存记忆已在 saveAndReturn 中完成
-
-  // 14. 长期记忆提取
-  // 每 longTermExtractInterval 轮执行一次 LLM 事实提取
-  if (state.totalTurns % config.memory.longTermExtractInterval === 0) {
-    const extractPrompt = async (prompt: string) => {
-      const result = await generateText({
-        model,
-        system: "你是一个事实提取助手，请按要求提取信息。",
-        messages: [{ role: "user", content: prompt }],
-        maxOutputTokens: 500,
-        temperature: 0.3,
-      });
-      return result.text || "";
-    };
-    extractFactsFromConversation(userId, extractPrompt).catch((err) =>
-      logger.warn("LLM 事实提取失败:", err),
-    );
-  }
-
-  // 每 40 轮分析一次用户兴趣
-  if (state.totalTurns % 40 === 0 && state.totalTurns > 0) {
-    const analyzePrompt = async (prompt: string) => {
-      const result = await generateText({
-        model,
-        system: "你是一个兴趣分析助手，请按要求分析对话。",
-        messages: [{ role: "user", content: prompt }],
-        maxOutputTokens: 500,
-        temperature: 0.5,
-      });
-      return result.text || "";
-    };
-    const profileForAnalysis = {
-      name: profile.name,
-      temperament: profile.temperament,
-      hobbies: profile.hobbies,
-      occupation: profile.occupation,
-    };
-    analyzeUserInterests(userId, profileForAnalysis, analyzePrompt).catch((err) =>
-      logger.warn("兴趣分析失败:", err),
-    );
-  }
-
-  // 仍然保留简易正则提取作为补充（长消息立即提取）
-  if (userMessage.length > 30) {
-    const patterns = [
-      /我(在|是|做)(.{2,15}?)(工作|上班|上学|读书)/,
-      /我喜欢(.{2,15}?)(游戏|音乐|电影|书|运动|吃的|喝)/,
-      /我住在(.{2,10})/,
-      /我养了(.{2,10})/,
-    ];
-    for (const pattern of patterns) {
-      const match = userMessage.match(pattern);
-      if (match) {
-        updateFact(match[0].slice(0, 2), match[0]);
-        break;
-      }
-    }
-  }
-
-  return splitForChat(reply);
-}
-
-/**
- * 生成动态拒绝回复（非固定模板）
- */
-async function generateRefusal(
-  model: LanguageModel,
-  profile: Profile,
-  reason: string,
-): Promise<string> {
-  try {
-    const refusalPrompt = buildRefusalPrompt(profile.user_nickname, reason);
-    const genderLabel = profile.relationship_type === "boyfriend" ? "男生" : "女生";
-    const context = `${profile.name}是一个${profile.age}岁${profile.temperament}的${genderLabel}。${refusalPrompt}\n\n请用${profile.name}的身份自然地回复用户。`;
-
-    const result = await generateText({
-      model,
-      system: context,
-      messages: [{ role: "user", content: "（用户说了一些你不该回应的话）" }],
-      maxOutputTokens: 200,
-      temperature: 0.9,
-    });
-
-    return result.text || fallbackRefusal();
-  } catch {
-    return fallbackRefusal();
-  }
+  // Stage 5: PostProcess — 记忆保存 + 事实提取 + 气泡拆分
+  return postProcessStage({
+    userId,
+    userMessage,
+    reply: gen.reply,
+    model,
+    config,
+    profile,
+    totalTurns: mem.summaryState.totalTurns,
+  });
 }

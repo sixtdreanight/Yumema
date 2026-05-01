@@ -1,4 +1,5 @@
-import { Textarea } from "../ui/Textarea";
+import { Textarea } from "../ui/Input";
+import { Flex } from "@radix-ui/themes";
 
 export default function SpeakingStyleStep({
   data, update,
@@ -7,11 +8,11 @@ export default function SpeakingStyleStep({
   update: (d: Partial<{ customStyle: string }>) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Flex direction="column" gap="8">
+      <Flex direction="column" gap="1">
         <h2 className="text-lg font-semibold">TA 有什么说话习惯？</h2>
         <p className="text-sm text-muted-foreground">颜文字、口癖、口头禅等，可选填</p>
-      </div>
+      </Flex>
       <Textarea
         value={data.customStyle}
         onChange={(e) => update({ customStyle: e.target.value })}
@@ -19,6 +20,6 @@ export default function SpeakingStyleStep({
         rows={4}
         style={{ lineHeight: "1.8" }}
       />
-    </div>
+    </Flex>
   );
 }

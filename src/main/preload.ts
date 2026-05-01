@@ -11,6 +11,18 @@ const api = {
     ipcRenderer.invoke("setup:parse-description", desc),
   saveProfile: (data: Record<string, unknown>) =>
     ipcRenderer.invoke("setup:save-profile", data),
+  importCard: () =>
+    ipcRenderer.invoke("setup:import-card"),
+  getMBTITypes: () =>
+    ipcRenderer.invoke("app:get-mbti-types"),
+  getMemoryFacts: () =>
+    ipcRenderer.invoke("memory:get-facts"),
+  updateMemoryFact: (fact: { topic: string; content: string }) =>
+    ipcRenderer.invoke("memory:update-fact", fact),
+  deleteMemoryFact: (topic: string) =>
+    ipcRenderer.invoke("memory:delete-fact", topic),
+  searchChat: (query: string) =>
+    ipcRenderer.invoke("chat:search", query),
 
   // 聊天
   sendMessage: (message: string) =>
@@ -54,7 +66,11 @@ const api = {
   importProfile: () => ipcRenderer.invoke("app:import-profile"),
 
   // 聊天记录导出
-  exportChat: (format: "json" | "txt") => ipcRenderer.invoke("app:export-chat", format),
+  exportChat: (format: "json" | "txt" | "md") => ipcRenderer.invoke("app:export-chat", format),
+
+  // 消息反馈
+  submitFeedback: (data: { type: string; userMessage: string; aiReply: string; correctionText?: string }) =>
+    ipcRenderer.invoke("feedback:submit", data),
 
   // 重置数据
   resetAllData: () => ipcRenderer.invoke("app:reset-data"),

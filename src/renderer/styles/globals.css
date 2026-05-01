@@ -120,19 +120,19 @@
   --vp-error: var(--destructive);
   --vp-error-soft: #fef2f2;
 
-  --vp-radius-xs: 6px;
+  --vp-radius-xs: 4px;
   --vp-radius-sm: 8px;
-  --vp-radius-md: 12px;
+  --vp-radius-md: 8px;
   --vp-radius-lg: 16px;
-  --vp-radius-xl: 20px;
+  --vp-radius-xl: 16px;
   --vp-radius-2xl: 24px;
 
   /* IM chat tokens */
-  --vp-bubble-user: var(--primary);
-  --vp-bubble-user-text: #ffffff;
-  --vp-bubble-partner: var(--card);
+  --vp-bubble-user-glass: rgba(147, 197, 253, 0.35);
+  --vp-bubble-user-text: #1e293b;
+  --vp-bubble-partner-glass: rgba(255, 192, 203, 0.3);
   --vp-bubble-partner-text: var(--foreground);
-  --vp-bg-chat: #e8eaed;
+  --vp-bg-chat: linear-gradient(135deg, rgba(240,160,184,0.12) 0%, rgba(147,197,253,0.12) 50%, rgba(196,180,255,0.12) 100%);
   --vp-time-label: var(--muted-foreground);
   --vp-separator: var(--border);
 
@@ -184,10 +184,10 @@
   --vp-shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.7);
 
   /* IM chat tokens — dark */
-  --vp-bg-chat: #1a1a1d;
-  --vp-bubble-user: var(--primary);
-  --vp-bubble-user-text: #1c0a13;
-  --vp-bubble-partner: var(--card);
+  --vp-bg-chat: linear-gradient(135deg, rgba(240,160,184,0.04) 0%, rgba(147,197,253,0.04) 50%, rgba(196,180,255,0.04) 100%);
+  --vp-bubble-user-glass: rgba(147, 197, 253, 0.2);
+  --vp-bubble-user-text: #93c5fd;
+  --vp-bubble-partner-glass: rgba(255, 192, 203, 0.18);
   --vp-bubble-partner-text: var(--foreground);
   --vp-time-label: var(--muted-foreground);
   --vp-separator: var(--border);
@@ -207,13 +207,39 @@ html {
 
 body {
   font-family: var(--vp-font);
-  background: var(--background);
+  background: linear-gradient(
+    135deg,
+    rgba(135, 206, 250, 0.35) 0%,
+    rgba(255, 182, 193, 0.35) 25%,
+    rgba(216, 180, 254, 0.35) 50%,
+    rgba(255, 182, 193, 0.35) 75%,
+    rgba(135, 206, 250, 0.35) 100%
+  ) fixed;
+  background-size: 400% 400%;
+  animation: shine 8s infinite linear;
   color: var(--foreground);
   overflow: hidden;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.65;
   letter-spacing: 0.01em;
+}
+.dark body {
+  background: linear-gradient(
+    135deg,
+    rgba(135, 206, 250, 0.12) 0%,
+    rgba(255, 182, 193, 0.12) 25%,
+    rgba(216, 180, 254, 0.12) 50%,
+    rgba(255, 182, 193, 0.12) 75%,
+    rgba(135, 206, 250, 0.12) 100%
+  ) fixed;
+  background-size: 400% 400%;
+  animation: shine 8s infinite linear;
+}
+
+/* Radix Theme root div covers body gradient — make it transparent */
+.radix-themes[data-is-root-theme] {
+  background-color: transparent !important;
 }
 
 #root {
@@ -223,7 +249,7 @@ body {
 }
 
 /* ===== Scrollbar ===== */
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
@@ -242,6 +268,22 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* ===== Radix Themes Select popover background fix ===== */
+/* Select.Content renders in a portal; ensure solid background to prevent text overlap */
+.rt-SelectContent {
+  background: var(--background) !important;
+  background-image: none !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+}
+.dark .rt-SelectContent {
+  background: var(--card) !important;
+  background-image: none !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+.rt-SelectViewport {
+  background: transparent !important;
+}
+
 /* ===== Selection ===== */
 ::selection {
   background: var(--vp-primary-soft);
@@ -249,14 +291,43 @@ button:focus-visible {
 }
 
 /* ===== Glass utility ===== */
-.glass {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+/* .glass removed — use GlassCard component instead */
+
+/* ===== macOS Dock style frosted glass ===== */
+.glass-shine {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
-.dark .glass,
-.dark.glass {
-  background: rgba(24, 24, 27, 0.75);
+.dark .glass-shine,
+.dark.glass-shine {
+  background: rgba(28, 28, 34, 0.7);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== Animated gradient card ===== */
+/* .gradient-card removed — use GlassCard component instead */
+
+/* ===== Gradient button ===== */
+.gradient-btn {
+  background: linear-gradient(135deg, var(--primary) 0%, #93c5fd 50%, #c4b5fd 100%) !important;
+  background-size: 200% 200% !important;
+  animation: gradientFlow 3s infinite ease-in-out;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(240, 160, 184, 0.4);
+  letter-spacing: 0.05em;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.gradient-btn:hover {
+  box-shadow: 0 6px 24px rgba(240, 160, 184, 0.55);
+  transform: translateY(-1px);
+}
+.gradient-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* ===== z-index layers ===== */
@@ -305,12 +376,12 @@ button:focus-visible {
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-12px); }
+  from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(12px); }
+  from { opacity: 0; transform: translateX(8px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
@@ -343,24 +414,89 @@ button:focus-visible {
 }
 
 @keyframes floatUp {
-  0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+  0% { opacity: 0; transform: translateY(8px) scale(0.98); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes shine {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .fade-in { animation: fadeIn var(--vp-transition) ease-out; }
-.slide-up { animation: slideUp 350ms var(--ease-spring); }
+.slide-up { animation: slideUp 300ms var(--ease-spring); }
 .slide-in-left { animation: slideInLeft 250ms ease-out; }
 .slide-in-right { animation: slideInRight 250ms ease-out; }
-.scale-in { animation: scaleIn 350ms var(--ease-spring); }
+.scale-in { animation: scaleIn 300ms var(--ease-spring); }
 .bounce-in { animation: bounceIn 500ms var(--ease-spring); }
-.float-up { animation: floatUp 400ms var(--ease-spring); }
-.page-enter { animation: fadeIn 350ms ease-out, scaleIn 450ms var(--ease-spring); }
+.float-up { animation: floatUp 300ms var(--ease-spring); }
+.page-enter { animation: fadeIn 300ms ease-out, scaleIn 300ms var(--ease-spring); }
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in,
+  .slide-up,
+  .slide-in-left,
+  .slide-in-right,
+  .scale-in,
+  .bounce-in,
+  .float-up,
+  .page-enter {
+    animation: none;
+  }
+
+  /* Pause infinite background animations */
+  body,
+  .dark body {
+    animation: none;
+  }
+
+  /* Static gradient button */
+  .gradient-btn {
+    animation: none;
+  }
+
+  /* Opacity pulse instead of bounce for typing dots */
+  .bounce-dot {
+    animation: none;
+    opacity: 0.3;
+    transition: opacity 0.5s ease;
+  }
+  .bounce-dot:nth-child(1),
+  .bounce-dot:nth-child(2) {
+    animation: none;
+  }
+
+  /* Stop shimmer loading */
+  .shimmer {
+    animation: none;
+  }
+
+  /* Stop pulse ring */
+  .pulse-ring {
+    animation: none;
+  }
+
+  /* Disable Radix UI animations */
+  [data-state="open"],
+  [data-state="closed"] {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
 
 /* ===== Bounce dots (typing indicator) ===== */
 .bounce-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--muted-foreground);
   animation: bounce 1.4s infinite ease-in-out both;

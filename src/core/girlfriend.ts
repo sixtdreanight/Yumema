@@ -20,15 +20,17 @@ interface Holiday {
   hintDays: number;
 }
 
+// 公历节日固定日期；农历节日（春节/元宵/端午/七夕/中秋）日期按年变化，
+// 此处为近似值（±15 天），AI 系统提示词中标注"约在此时"
 const HOLIDAYS: Holiday[] = [
   { name: "元旦", date: "1/1", hintDays: 3 },
-  { name: "春节", date: "1/29", hintDays: 7 },
-  { name: "元宵节", date: "2/12", hintDays: 2 },
+  { name: "春节（农历，日期每年不同）", date: "1/29", hintDays: 10 },
+  { name: "元宵节（农历，日期每年不同）", date: "2/12", hintDays: 5 },
   { name: "清明节", date: "4/5", hintDays: 2 },
   { name: "劳动节", date: "5/1", hintDays: 3 },
-  { name: "端午节", date: "5/31", hintDays: 2 },
-  { name: "七夕", date: "8/29", hintDays: 3 },
-  { name: "中秋节", date: "10/6", hintDays: 3 },
+  { name: "端午节（农历，日期每年不同）", date: "5/31", hintDays: 5 },
+  { name: "七夕（农历，日期每年不同）", date: "8/29", hintDays: 7 },
+  { name: "中秋节（农历，日期每年不同）", date: "10/6", hintDays: 7 },
   { name: "国庆节", date: "10/1", hintDays: 5 },
   { name: "万圣节", date: "10/31", hintDays: 1 },
   { name: "双十一", date: "11/11", hintDays: 3 },
@@ -106,9 +108,17 @@ function getUpcomingHoliday(month: number, day: number): string | null {
 }
 
 export function buildTimeContext(tz: string): string {
-  const now = tz
-    ? new Date(new Date().toLocaleString("en-US", { timeZone: tz }))
-    : new Date();
+  let now: Date;
+  if (tz) {
+    try {
+      now = new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
+    } catch {
+      // 无效时区回退到本地时间
+      now = new Date();
+    }
+  } else {
+    now = new Date();
+  }
   const hour = now.getHours();
   const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][now.getDay()];
   const month = now.getMonth() + 1;
@@ -210,6 +220,7 @@ export function buildSystemPrompt(
   refusalContext?: string,
   session?: SessionState,
   conversationSummary?: string,
+  chatExamples?: string,
 ): string {
   const uPronoun = userPronoun(profile.user_gender);
   const pLabel = partnerLabel(profile.relationship_type);
@@ -234,6 +245,7 @@ export function buildSystemPrompt(
   ${profile.speaking_style}
   你不是客服、不是助手、不是说教者。${profile.relationship_type === "boyfriend" ? "幽默可靠偶尔幼稚，不油腻不爹味。" : "可以撒娇可爱温柔，但有自己的态度，不是应声虫。"}</rule>`);
   parts.push(`<rule priority="4">保持一致：之前说过的话要记得，性格观点风格不矛盾。</rule>`);
+  parts.push(`<rule priority="4.5">不重复提问：不要在同一个对话中重复问对方已经回答过的问题。如果对方已经告诉过你某个信息，不要装作不知道再问一遍。聊天记录里有的信息直接用就行，不要反复确认。</rule>`);
   parts.push(`<rule priority="5">思维跳跃也跟得上：对方可能突然换话题，也可能过一会儿又回到之前的话题。
   你需要同时记住最近聊的和之前聊的内容。当对方说"刚才说的那个""之前提到的"等词语时，
   主动在聊天记录和对话摘要中查找相关话题。如果找到，自然地接上之前的内容。
@@ -250,10 +262,19 @@ export function buildSystemPrompt(
   // ═══════════════════════════════════════════
 
   parts.push("<character_info>");
-  parts.push(`${profile.age}岁，${profile.city}，${profile.occupation}，${profile.education}学历，${profile.major}专业。`);
-  parts.push(`性格：${profile.temperament}`);
-  parts.push(`爱好：${formatHobbies(profile.hobbies)}`);
-  parts.push(`日常：${profile.daily_life}`);
+
+  // 基本信息 — 只输出用户填写过的字段
+  const basicInfo: string[] = [];
+  if (profile.age > 0) basicInfo.push(`${profile.age}岁`);
+  if (profile.city) basicInfo.push(profile.city);
+  if (profile.occupation) basicInfo.push(profile.occupation);
+  if (profile.education) basicInfo.push(`${profile.education}学历`);
+  if (profile.major) basicInfo.push(`${profile.major}专业`);
+  if (basicInfo.length > 0) parts.push(basicInfo.join("，") + "。");
+
+  if (profile.temperament) parts.push(`性格：${profile.temperament}`);
+  if (profile.hobbies.length > 0) parts.push(`爱好：${formatHobbies(profile.hobbies)}`);
+  if (profile.daily_life) parts.push(`日常：${profile.daily_life}`);
   if (profile.quirks.length > 0) {
     parts.push(`特点：${profile.quirks.join("、")}`);
   }
@@ -314,7 +335,16 @@ export function buildSystemPrompt(
   }
 
   // ═══════════════════════════════════════════
-  // LAYER 3 (RECENCY) — 输出规则 + 安全 + 时间 + Author's Note
+  // LAYER 4 — Chat Examples (Few-shot 示例对话)
+  // ═══════════════════════════════════════════
+
+  if (chatExamples) {
+    parts.push(chatExamples);
+    parts.push("");
+  }
+
+  // ═══════════════════════════════════════════
+  // LAYER 5 (RECENCY) — 输出规则 + 安全 + 时间 + Author's Note
   // ═══════════════════════════════════════════
 
   parts.push("<output_rules>");

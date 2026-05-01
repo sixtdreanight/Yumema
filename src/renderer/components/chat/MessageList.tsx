@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useMemo } from "react";
+import { type RefObject, useEffect, useMemo, memo } from "react";
 import { Users, Heart } from "lucide-react";
 import type { ChatMessage } from "../../hooks/useChat";
 import MessageBubble from "./MessageBubble";
@@ -35,7 +35,7 @@ function groupByDate(messages: ChatMessage[]): GroupedMessages[] {
   return groups;
 }
 
-export default function MessageList({
+const MessageList = memo(function MessageList({
   messages, typing, composing, messagesEndRef, onRegenerate,
 }: {
   messages: ChatMessage[];
@@ -62,10 +62,10 @@ export default function MessageList({
             borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
             background: "var(--vp-primary-soft)",
           }}>
-            <Users size={28} style={{ color: "var(--primary)" }} />
+            <Users size={24} style={{ color: "var(--primary)" }} />
           </div>
-          <h3 style={{ fontSize: 15, fontWeight: 500 }}>开始聊天吧</h3>
-          <p style={{ fontSize: 13, marginTop: 6, color: "var(--muted-foreground)" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 500 }}>开始聊天吧</h3>
+          <p style={{ fontSize: 12, marginTop: 8, color: "var(--muted-foreground)" }}>
             发送第一条消息，TA 会回复你
           </p>
         </div>
@@ -74,13 +74,13 @@ export default function MessageList({
   }
 
   return (
-    <>
+    <div role="log" aria-live="polite" aria-label="聊天消息">
       {groups.map((group, gi) => (
-        <div key={gi} style={{ marginBottom: 12 }}>
+        <div key={gi} style={{ marginBottom: 16 }}>
           {group.label && (
-            <div style={{ display: "flex", justifyContent: "center", padding: "20px 0" }}>
+            <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
               <span style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontFamily: "var(--vp-font-mono)",
                 color: "var(--muted-foreground)",
               }}>
@@ -90,7 +90,7 @@ export default function MessageList({
           )}
           {group.messages.map(({ msg, idx }, mi) => (
             <MessageBubble
-              key={idx}
+              key={`${msg.time}-${idx}`}
               message={msg}
               showAvatar={mi === 0 || group.messages[mi - 1]?.msg.role !== msg.role}
               canRegenerate={idx === lastAssistantIdx && msg.role === "partner"}
@@ -101,7 +101,7 @@ export default function MessageList({
       ))}
 
       {(typing || composing) && (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingTop: 4 }}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, paddingTop: 8 }}
           className="slide-up">
           <Avatar style={{ width: 32, height: 32, background: "var(--vp-primary-soft)" }}>
             <AvatarFallback className="bg-transparent">
@@ -109,12 +109,14 @@ export default function MessageList({
             </AvatarFallback>
           </Avatar>
           <div style={{
-            padding: "10px 14px",
-            background: "var(--vp-bubble-partner)",
-            border: "1px solid var(--border)",
-            borderRadius: "18px 18px 18px 4px",
+            padding: "12px 16px",
+            background: "var(--vp-bubble-partner-glass)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            borderRadius: "16px 16px 16px 4px",
           }}>
-            <span style={{ fontSize: 12, color: "var(--muted-foreground)", marginRight: 6 }}>对方正在输入...</span>
+            <span style={{ fontSize: 12, color: "var(--muted-foreground)", marginRight: 8 }}>对方正在输入...</span>
             <span className="bounce-dot" />
             <span className="bounce-dot" style={{ marginLeft: 4 }} />
             <span className="bounce-dot" style={{ marginLeft: 4 }} />
@@ -122,6 +124,8 @@ export default function MessageList({
         </div>
       )}
       <div ref={messagesEndRef} />
-    </>
+    </div>
   );
-}
+});
+
+export default MessageList;

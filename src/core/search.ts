@@ -36,15 +36,19 @@ export function extractSearchQuery(msg: string): string {
  */
 async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
   const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": "yumema/1.0" },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "yumema/1.0" },
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    throw new Error(`DuckDuckGo 返回 ${res.status}`);
-  }
+    if (!res.ok) {
+      throw new Error(`DuckDuckGo 返回 ${res.status}`);
+    }
 
-  const data = (await res.json()) as {
+    const data = (await res.json()) as {
     AbstractText?: string;
     AbstractURL?: string;
     RelatedTopics?: { Text?: string; FirstURL?: string }[];
@@ -72,7 +76,10 @@ async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
     }
   }
 
-  return results;
+    return results;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**

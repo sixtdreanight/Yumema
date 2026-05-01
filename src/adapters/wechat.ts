@@ -7,7 +7,7 @@
  * 本适配器通过轮询 + HTTP 回调方式收发消息。
  */
 
-import { logger } from "../core/utils.js";
+import { logger, sleep } from "../core/utils.js";
 
 // ---- 类型 ----
 
@@ -29,8 +29,6 @@ export interface WeChatMessage {
 export type WeChatHandler = (msg: WeChatMessage) => Promise<string[]>;
 
 // ---- 适配器 ----
-
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export function startWeChat(
   config: WeChatConfig,
@@ -61,7 +59,23 @@ export function startWeChat(
       pollMessages();
     } catch (err) {
       logger.error("微信初始化失败:", err);
+      throw err;
     }
+  }
+
+  async function loginWithRetry(): Promise<void> {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await loginAndInit();
+        return;
+      } catch (err) {
+        logger.error(`微信登录尝试 ${attempt}/3 失败:`, err);
+        if (attempt < 3) {
+          await sleep(2000 * attempt);
+        }
+      }
+    }
+    logger.error("微信登录 3 次均失败，放弃");
   }
 
   async function pollMessages() {
@@ -138,7 +152,7 @@ export function startWeChat(
     }
   }
 
-  loginAndInit();
+  loginWithRetry();
 
   return {
     stop: () => {

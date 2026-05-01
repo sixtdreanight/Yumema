@@ -2,6 +2,33 @@
 
 本文件所有 notable changes 遵循 [Keep a Changelog](https://keepachangelog.com/) 规范。
 
+## [0.0.2] - 2026-05-01
+
+### Added
+- Pipeline 分解：processMessage 从 278 行 god function 拆分为 5 个独立 stage（preprocess / memory / context / generation / postprocess）
+- 模型差异化提示词架构：Claude（XML 叙事）/ GPT（结构化）/ DeepSeek（Jinja + think）/ Ollama（多示例），每个模型独立参数预设
+- Author's Note 机制：根据会话状态动态注入最高优先级指令（防复读、引导话题、保持角色一致性）
+- 5 层提示词分层组装：核心行为 → 角色定义 → 动态上下文 → 对话示例 → Author's Note
+- 角色模板 chatExamples：5 种角色模板新增 2-3 轮示例对话
+- 三维记忆评分检索：relevance + recency + importance，替代简单取最新 N 条
+- 艾宾浩斯遗忘曲线：高重要性事实 2× 容忍期，低重要性 0.5×
+- 记忆反馈闭环：点赞/踩/纠错自动调整相关事实 importance
+- 动态摘要触发：基于 token 用量阈值（>60% 窗口）替代固定轮次触发
+- 8px 软网格间距系统：CSS spacing token + 语义聊天 token，修复 82+ 处间距违规
+- WCAG 2.1 AA 无障碍基线：role/log、aria-live、aria-hidden、键盘导航、focus-visible
+- prefers-reduced-motion 补全：暂停 shine/gradientFlow/bounce/shimmer/pulse-ring 及 Radix 动画
+- GlassCard Liquid Glass 升级：交互态 focus-visible ring + keyboard 支持
+
+### Changed
+- MessageList + MessageBubble 包裹 React.memo，1000+ 消息不卡顿
+- ChatWindow doSearch 包裹 useCallback，异步 IPC 加 mounted guard
+- SettingsDialog 异步操作加 AbortController cleanup，setTimeout 统一管理
+- electron-builder 26.x 适配：depends 从 linux 移至 deb 节点
+
+### Fixed
+- 新开窗口聊天记录丢失：useChat mount 时未调用 loadHistory()
+- UpdateToast JSX 结构错误：flex row div 未闭合导致打包失败
+
 ## [0.0.1] - 2026-04-30
 
 ### Added

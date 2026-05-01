@@ -6,7 +6,7 @@
  * 遗忘曲线: 不是无限完美记忆 — 久了不提就忘了
  */
 
-import { readFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, renameSync, appendFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getDataRoot, writeFileAtomic } from "./config.js";
 import { logger, retry } from "./utils.js";
@@ -27,6 +27,10 @@ export interface Fact {
   lastMentioned: string;
   /** high = 提到 5+ 次, medium = 3-4 次, low = 1-2 次 */
   confidence: "high" | "medium" | "low";
+  /** 重要性评分 [0, 1]，初始 0.5，受反馈调整 */
+  importance: number;
+  /** 上次被检索/注入上下文的时间 */
+  lastAccess: string;
 }
 
 export interface LongTermMemory {
@@ -65,21 +69,51 @@ export function loadShortTerm(userId: string, maxTurns: number): ConversationTur
     const history: ConversationTurn[] = JSON.parse(raw);
     return history.slice(-maxTurns * 2);
   } catch {
-    logger.warn(`读取 ${userId} 对话历史失败，从头开始`);
+    try {
+      const backupPath = filePath + `.corrupted-${Date.now()}.json`;
+      renameSync(filePath, backupPath);
+      logger.warn(`对话历史损坏，已备份至 ${backupPath}，从头开始`);
+    } catch {
+      logger.warn(`读取 ${userId} 对话历史失败，从头开始`);
+    }
     return [];
   }
 }
 
 /**
  * 追加一轮对话到短期记忆
+ * 使用文件追加替代全量读写，避免每条消息 O(n) 文件 I/O
  */
 export function saveShortTerm(userId: string, userMsg: string, assistantMsg: string) {
   ensureDirs();
-  const history = loadShortTerm(userId, 9999);
+  const filePath = resolve(convDir(), `${userId}.json`);
   const now = new Date().toISOString();
-  history.push({ role: "user", content: userMsg, timestamp: now });
-  history.push({ role: "assistant", content: assistantMsg, timestamp: now });
-  writeFileAtomic(resolve(convDir(), `${userId}.json`), JSON.stringify(history, null, 2));
+  const userTurn = { role: "user" as const, content: userMsg, timestamp: now };
+  const assistantTurn = { role: "assistant" as const, content: assistantMsg, timestamp: now };
+
+  if (!existsSync(filePath)) {
+    // 新文件：直接写入完整 JSON 数组
+    writeFileAtomic(filePath, JSON.stringify([userTurn, assistantTurn], null, 2) + "\n");
+    return;
+  }
+
+  // 已有文件：截掉末尾的 "]" 换行，追加新条目
+  const stat = statSync(filePath);
+  const lastBytes = readFileSync(filePath, { encoding: "utf-8", flag: "r" });
+  // 找到最后一个非空白字符（即 "]"），截断后再追加
+  const trimmed = lastBytes.trimEnd();
+  if (!trimmed.endsWith("]")) {
+    // 文件格式异常，回退到全量读写
+    const history = loadShortTerm(userId, 9999);
+    history.push(userTurn, assistantTurn);
+    writeFileAtomic(filePath, JSON.stringify(history, null, 2) + "\n");
+    return;
+  }
+  const cutoff = lastBytes.length - (lastBytes.length - trimmed.length) - 1; // before the "]"
+  const prefix = lastBytes.slice(0, cutoff);
+  const prevEntries = trimmed.startsWith("[") && trimmed.endsWith("]") && trimmed.length > 2;
+  const newEntries = JSON.stringify([userTurn, assistantTurn], null, 2).trimStart().slice(1).trimEnd().slice(0, -1);
+  writeFileSync(filePath, prefix + (prevEntries ? ",\n  " : "") + newEntries + "\n]\n", "utf-8");
 }
 
 /**
@@ -177,6 +211,8 @@ export function updateFact(topic: string, content: string) {
     if (existing.mentions >= 5) existing.confidence = "high";
     else if (existing.mentions >= 3) existing.confidence = "medium";
     else existing.confidence = "low";
+    // 每次确认性提及略微提升重要性（上限 1.0）
+    existing.importance = Math.min(1.0, (existing.importance ?? 0.5) + 0.05);
     logger.debug(`长期记忆更新: ${topic} (提及 ${existing.mentions} 次)`);
   } else {
     memory.facts.push({
@@ -186,6 +222,8 @@ export function updateFact(topic: string, content: string) {
       firstMentioned: new Date().toISOString(),
       lastMentioned: new Date().toISOString(),
       confidence: "low",
+      importance: 0.5,
+      lastAccess: new Date().toISOString(),
     });
     logger.debug(`长期记忆新增: ${topic}`);
   }
@@ -194,9 +232,12 @@ export function updateFact(topic: string, content: string) {
 }
 
 /**
- * 应用遗忘曲线
- * - 30+ 天未提及 → 降级为 medium
- * - 60+ 天未提及 → 删除
+ * 应用艾宾浩斯遗忘曲线
+ *
+ * 基础阈值: 30 天未提及 → 降级, 60 天 → 删除
+ * 重要性修正:
+ *   importance > 0.7 → ×2 容忍期（60/120 天）
+ *   importance < 0.3 → ×0.5 容忍期（15/30 天）
  */
 export function applyForgettingCurve() {
   const memory = loadLongTerm();
@@ -207,16 +248,27 @@ export function applyForgettingCurve() {
   const before = memory.facts.length;
 
   memory.facts = memory.facts.filter((fact) => {
+    const importance = fact.importance ?? 0.5;
+
+    // 重要性缩放因子
+    let scale = 1;
+    if (importance > 0.7) scale = 2;
+    else if (importance < 0.3) scale = 0.5;
+
+    const degradeThreshold = THIRTY_DAYS * scale;
+    const deleteThreshold = SIXTY_DAYS * scale;
+
     const lastMentioned = new Date(fact.lastMentioned).getTime();
     const elapsed = now - lastMentioned;
 
-    if (elapsed > SIXTY_DAYS) {
-      logger.debug(`遗忘: ${fact.topic} (超过60天未提及)`);
+    if (elapsed > deleteThreshold) {
+      logger.debug(`遗忘: ${fact.topic} (超过${Math.round(deleteThreshold / (24 * 60 * 60 * 1000))}天未提及, importance=${importance.toFixed(2)})`);
       return false;
     }
-    if (elapsed > THIRTY_DAYS && fact.confidence === "high") {
+    if (elapsed > degradeThreshold && fact.confidence === "high") {
       fact.confidence = "medium";
-      logger.debug(`记忆降级: ${fact.topic} (超过30天未提及)`);
+      fact.importance = Math.max(0, importance - 0.1);
+      logger.debug(`记忆降级: ${fact.topic} (超过${Math.round(degradeThreshold / (24 * 60 * 60 * 1000))}天未提及)`);
     }
     return true;
   });
@@ -228,28 +280,150 @@ export function applyForgettingCurve() {
 
 /**
  * 构建注入提示词的记忆上下文
- * 按 mentions × recency 排序，限制注入数量避免噪声
+ * 使用三维评分排序: relevance + recency + importance
  */
-export function buildMemoryContext(maxFacts = 5): MemoryContext {
+export function buildMemoryContext(maxFacts = 5, userQuery?: string): MemoryContext {
   const memory = loadLongTerm();
   const now = Date.now();
 
-  // 按相关性排序: mentions 越多、越近提到 → 越相关
+  // 三维评分: 0.4 × relevance + 0.3 × recency + 0.3 × importance
   const score = (f: Fact): number => {
-    const daysAgo = (now - new Date(f.lastMentioned).getTime()) / (24 * 60 * 60 * 1000);
-    return f.mentions * (1 / (1 + daysAgo)); // mentions × recency decay
+    let relevance = 0.5; // 默认中性值
+    if (userQuery) {
+      relevance = topicRelevance(f, userQuery);
+    }
+    const recency = expRecencyDecay(f.lastAccess || f.lastMentioned, now);
+    const importance = f.importance ?? 0.5;
+    return 0.4 * relevance + 0.3 * recency + 0.3 * importance;
   };
 
   const sorted = [...memory.facts].sort((a, b) => score(b) - score(a));
 
-  const high = sorted.filter((f) => f.confidence === "high").slice(0, maxFacts);
-  const medium = sorted.filter((f) => f.confidence === "medium").slice(0, maxFacts);
-  // low confidence facts are not injected — too noisy
+  // 标记被检索的事实（更新 lastAccess）
+  const selectedHigh = sorted.filter((f) => f.confidence === "high").slice(0, maxFacts);
+  const selectedMedium = sorted.filter((f) => f.confidence === "medium").slice(0, maxFacts);
+  const selected = [...selectedHigh, ...selectedMedium];
+
+  for (const fact of selected) {
+    fact.lastAccess = new Date().toISOString();
+  }
+  if (selected.length > 0) saveLongTerm(memory);
 
   return {
-    highConfidence: high.map((f) => f.content),
-    mediumConfidence: medium.map((f) => f.content),
+    highConfidence: selectedHigh.map((f) => f.content),
+    mediumConfidence: selectedMedium.map((f) => f.content),
   };
+}
+
+/**
+ * 多维度记忆评分 — 用于检索与当前查询最相关的记忆。
+ *
+ * score = 0.4 × relevance + 0.3 × recency + 0.3 × importance
+ *
+ * 参考 ACMS 2025 三维评分模型。
+ */
+export function scoreMemoryFacts(userId: string, query: string, topN = 5): Fact[] {
+  const memory = loadLongTerm();
+  const now = Date.now();
+
+  const scored = memory.facts.map((fact) => {
+    const relevance = topicRelevance(fact, query);
+    const recency = expRecencyDecay(fact.lastAccess || fact.lastMentioned, now);
+    const importance = fact.importance ?? 0.5;
+    return {
+      fact,
+      score: 0.4 * relevance + 0.3 * recency + 0.3 * importance,
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const top = scored.slice(0, topN).map((s) => s.fact);
+  for (const fact of top) {
+    fact.lastAccess = new Date().toISOString();
+  }
+  if (top.length > 0) saveLongTerm(memory);
+
+  return top;
+}
+
+// ---- 评分辅助函数 ----
+
+/** 话题相关性：基于 token 重叠的简单文本匹配 */
+function topicRelevance(fact: Fact, query: string): number {
+  const queryTokens = tokenize(query.toLowerCase());
+  const factText = `${fact.topic} ${fact.content}`.toLowerCase();
+
+  let matches = 0;
+  for (const token of queryTokens) {
+    if (factText.includes(token)) matches++;
+  }
+
+  if (matches === 0) return 0;
+  // Jaccard-like: matched tokens / total unique tokens
+  const factTokens = new Set(tokenize(factText));
+  const intersection = queryTokens.filter((t) => factTokens.has(t)).length;
+  const union = new Set([...queryTokens, ...factTokens]).size;
+  return union > 0 ? intersection / union : 0;
+}
+
+function tokenize(text: string): string[] {
+  // 中文按字符切分，英文按空格切分
+  return text
+    .split(/[\s,，。！？、；：""''「」【】《》（）\(\)]+/)
+    .filter((t) => t.length > 0)
+    .flatMap((t) => {
+      if (/^[一-鿿]+$/.test(t) && t.length > 2) {
+        // 中文词：单字和双字组合
+        const chars = [...t];
+        const result: string[] = [t]; // 完整词
+        for (let i = 0; i < chars.length - 1; i++) {
+          result.push(chars[i] + chars[i + 1]); // bigrams
+        }
+        return result;
+      }
+      return [t];
+    });
+}
+
+/** 指数衰减 recency: exp(-λ·Δt)，λ=0.05 → ~50% 权重在 14 天后 */
+function expRecencyDecay(lastTimestamp: string, now: number): number {
+  const lastTime = new Date(lastTimestamp).getTime();
+  const daysAgo = (now - lastTime) / (24 * 60 * 60 * 1000);
+  const lambda = 0.05;
+  return Math.exp(-lambda * daysAgo);
+}
+
+// ---- 重要性调整（反馈闭环） ----
+
+/**
+ * 调整事实的重要性评分。
+ * 用户点赞 → delta +0.1
+ * 用户踩 → delta -0.1
+ * 用户纠错 → delta +0.3（并更新内容）
+ */
+export function adjustFactImportance(
+  topic: string,
+  delta: number,
+  newContent?: string,
+): void {
+  const memory = loadLongTerm();
+  const fact = memory.facts.find(
+    (f) => f.topic === topic || f.content.includes(topic.slice(0, 10)),
+  );
+
+  if (!fact) return;
+
+  fact.importance = Math.max(0, Math.min(1, (fact.importance ?? 0.5) + delta));
+  if (newContent) {
+    fact.content = newContent;
+    fact.mentions += 1;
+    fact.lastMentioned = new Date().toISOString();
+  }
+  fact.lastAccess = new Date().toISOString();
+
+  saveLongTerm(memory);
+  logger.debug(`记忆重要性调整: ${topic} ${delta >= 0 ? "+" : ""}${delta} → ${fact.importance.toFixed(2)}`);
 }
 
 /**
