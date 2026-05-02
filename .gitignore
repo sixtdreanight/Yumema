@@ -8,3 +8,4 @@ data/learned-interests.json
 data/relationship.json
 .DS_Store
 
+logs/
