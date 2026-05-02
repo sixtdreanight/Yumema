@@ -111,6 +111,7 @@ Use the `logger` from `src/core/utils.ts` -- never `console.log` directly except
 
 - **Trace before editing**: Before changing a visual element, trace the ENTIRE render chain: page → component → sub-component → CSS/styling. Verify the change affects all intended targets and no unintended ones. Do NOT edit one file and assume it propagates — check every usage site first.
 - **Verify after editing**: After making a change, check the built output in `dist/` to confirm the change actually landed in the generated CSS/JS. Grep for the changed value.
+- **Release sync**: When bumping version, update ALL of: `package.json`, sidebar version string, SettingsDialog fallback version, README.md, docs/CHANGELOG.md, and any hardcoded version references. Run `grep -rn "old-version" src/ docs/ README.md` to find stragglers. Commit, tag, and push.
 
 ## Frontend Design Rules
 
