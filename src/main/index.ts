@@ -139,6 +139,9 @@ app.whenReady().then(() => {
       callback({
         responseHeaders: {
           ...details.responseHeaders,
+          // NOTE: The hardcoded SHA256 hash below is fragile — it must be regenerated
+          // whenever the renderer bundle changes. For production, prefer a nonce-based
+          // CSP served via a per-request nonce generated at runtime.
           "Content-Security-Policy": [
             "default-src 'self'; script-src 'self' 'sha256-0vhENBDiXt7C/5mQpX0pintncSH8cMav2aVDGcEhUZk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';",
           ],
