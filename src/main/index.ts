@@ -28,6 +28,7 @@ function createWindow(startRoute: "setup" | "chat") {
     webPreferences: {
       preload: join(__dirname, "../preload/preload.cjs"),
       contextIsolation: true,
+      nodeIntegration: false,
       sandbox: true,
     },
   });

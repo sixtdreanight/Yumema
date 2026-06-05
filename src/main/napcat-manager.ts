@@ -185,14 +185,31 @@ async function downloadFile(url: string, dest: string, onProgress?: (pct: number
 async function extractZip(zipPath: string, destDir: string): Promise<void> {
   if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
 
-  const { execSync } = await import("node:child_process");
-  // 用系统自带 unzip，避免 pure-JS 内存溢出（NapCatQQ 包约 200MB）
-  const cmd =
-    process.platform === "win32"
-      ? `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`
-      : `unzip -o "${zipPath}" -d "${destDir}"`;
+  const { spawn } = await import("node:child_process");
 
-  execSync(cmd, { stdio: "pipe" });
+  return new Promise((resolve, reject) => {
+    let cmd: string;
+    let args: string[];
+
+    if (process.platform === "win32") {
+      cmd = "powershell";
+      args = ["-Command", "Expand-Archive", "-Path", zipPath, "-DestinationPath", destDir, "-Force"];
+    } else {
+      cmd = "unzip";
+      args = ["-o", zipPath, "-d", destDir];
+    }
+
+    const child = spawn(cmd, args, { stdio: "pipe", shell: false });
+
+    let stderr = "";
+    child.stderr?.on("data", (d: Buffer) => { stderr += d.toString(); });
+
+    child.on("error", (err: Error) => reject(err));
+    child.on("close", (code: number | null) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Extract failed (exit ${code}): ${stderr}`));
+    });
+  });
 }
 
 function generateNapCatConfig(token: string): Record<string, unknown> {
