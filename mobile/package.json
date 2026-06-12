@@ -1,0 +1,36 @@
+{
+  "name": "yumema-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "梦间 / Yumema — AI 伴侣移动端",
+  "author": "DreamNight <erk163@163.com>",
+  "license": "GPL-3.0",
+  "scripts": {
+    "start": "react-native start",
+    "ios": "react-native run-ios",
+    "android": "react-native run-android",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@sixtdreamnight/companion-engine": "^0.4.0",
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@ai-sdk/openai": "^3.0.0",
+    "@react-native-async-storage/async-storage": "^2.0.0",
+    "@react-navigation/native": "^7.0.0",
+    "@react-navigation/native-stack": "^7.0.0",
+    "@notifee/react-native": "^9.0.0",
+    "react": "^19.0.0",
+    "react-native": "^0.76.0",
+    "react-native-fs": "^2.20.0",
+    "react-native-safe-area-context": "^5.0.0",
+    "react-native-screens": "^4.0.0",
+    "react-native-background-fetch": "^4.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0",
+    "jest": "^29.0.0",
+    "@react-native/metro-config": "^0.76.0"
+  }
+}

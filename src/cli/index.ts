@@ -163,8 +163,8 @@ async function wechatMode(pipelineCtx: Parameters<typeof processMessage>[2], con
 async function main() {
   logger.info("Yumema 启动中...");
 
-  const config = loadConfig();
-  const profile = loadProfile();
+  const config = await loadConfig();
+  const profile = await loadProfile();
   if (!profile) {
     logger.error("未找到角色卡，请先运行 npm run setup 创建你的 Yumema");
     process.exit(1);

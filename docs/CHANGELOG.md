@@ -2,6 +2,37 @@
 
 本文件所有 notable changes 遵循 [Keep a Changelog](https://keepachangelog.com/) 规范。
 
+## [0.3.0] - 2026-06-12
+
+### Breaking
+- companion-engine 升级至 v0.4.0：StorageAdapter 接口全面异步化，loadProfile/initDataRoot/writeEnvFile 等顶层 API 改为返回 Promise
+
+### Added
+- **移动端 React Native 应用** (`mobile/`)：companion 直接运行在手机上，无需桌面端
+  - RNFS StorageAdapter + AsyncStorage KVStore 平台适配器
+  - 8 步设置向导、FlatList 聊天界面、记忆管理、AI 配置
+  - 暗色模式自动切换、安全区域适配、FlatList 虚拟列表
+- CI 增加 `electron-vite build` 全量编译步骤，覆盖主进程和渲染进程
+- `src/renderer/lib/models.ts` 共享模型常量（ANTHROPIC_MODELS / OPENAI_MODELS / getModels / isCustomModelProvider）
+
+### Security
+- NapCatQQ SHA256 校验文件始终从 GitHub 直连获取，不经过 ghproxy 镜像
+- gewe Docker 镜像添加 SECURITY WARNING 注释（latest 标签风险）
+
+### Fixed
+- 版本号从硬编码 `v0.1.1` 改为动态读取 `app.getVersion()`
+- SettingsDialog 已配置 API key 时保存按钮不再错误禁用
+- 设置向导 WizardData.aiProvider 类型补全 `"ollama"`
+- ChatWindow 侧边栏模型切换使用共享模型常量，与设置页统一
+- 删除死代码 `useChatRuntime.ts`（159 行，无引用）
+- tsconfig.json include 路径修正为实际存在的目录
+
+### Changed
+- `chat:send` 和 `chat:regenerate` 重复的分条推送逻辑提取为 `sendRepliesToRenderer()`
+- `registerIpcHandlers()` 改为 async
+- NapCatQQ 异常退出自动重启（最多 3 次，间隔 5 秒）
+- NapCatQQ EADDRINUSE 端口冲突显示友好提示
+
 ## [0.1.1] - 2026-05-16
 
 ### Security

@@ -13,9 +13,9 @@ import type { LanguageModel } from "ai";
 
 let pipelineCtx: { model: LanguageModel; config: ReturnType<typeof loadConfig>; profile: ReturnType<typeof loadProfile> } | null = null;
 
-function createPipelineContext() {
-  const config = loadConfig();
-  const profile = loadProfile();
+async function createPipelineContext() {
+  const config = await loadConfig();
+  const profile = await loadProfile();
   if (!profile) throw new Error("Profile not found");
   const model = createAIProvider(config.ai);
   return { model, config, profile };
@@ -27,24 +27,25 @@ export function pipelineInvalidate() {
 
 function win() { return BrowserWindow.getAllWindows()[0] ?? null; }
 
+async function sendRepliesToRenderer(replies: string[]) {
+  const w = win();
+  if (!w) return;
+  await new Promise(r => setTimeout(r, 800 + Math.random() * 1500));
+  w.webContents.send("chat:reply-chunk", { index: 0, total: replies.length, text: replies[0] });
+  for (let i = 1; i < replies.length; i++) {
+    w.webContents.send("chat:typing", { active: true });
+    await new Promise(r => setTimeout(r, 600 + Math.random() * 1000));
+    w.webContents.send("chat:reply-chunk", { index: i, total: replies.length, text: replies[i] });
+  }
+}
+
 export function registerChatHandlers() {
   // ---- 聊天 ----
   safeHandle("chat:send", async (_, message: string) => {
     try {
-      if (!pipelineCtx) pipelineCtx = createPipelineContext();
+      if (!pipelineCtx) pipelineCtx = await createPipelineContext();
       const replies = await processMessage(GUI_USER_ID, message, pipelineCtx);
-
-      const w = win();
-      if (w) {
-        await new Promise(r => setTimeout(r, 800 + Math.random() * 1500));
-        w.webContents.send("chat:reply-chunk", { index: 0, total: replies.length, text: replies[0] });
-        for (let i = 1; i < replies.length; i++) {
-          w.webContents.send("chat:typing", { active: true });
-          await new Promise(r => setTimeout(r, 600 + Math.random() * 1000));
-          w.webContents.send("chat:reply-chunk", { index: i, total: replies.length, text: replies[i] });
-        }
-      }
-
+      await sendRepliesToRenderer(replies);
       return { success: true, data: { replies } };
     } catch (err) {
       const errorText = `抱歉，出了点问题: ${err instanceof Error ? err.message : "未知错误"}`;
@@ -56,8 +57,8 @@ export function registerChatHandlers() {
     }
   });
 
-  safeHandle("chat:load-history", (_, limit?: number) => {
-    return loadShortTerm(GUI_USER_ID, limit ?? 24);
+  safeHandle("chat:load-history", async (_, limit?: number) => {
+    return await loadShortTerm(GUI_USER_ID, limit ?? 24);
   });
 
   safeHandle("chat:export", async (_, format: "txt" | "md") => {
@@ -65,10 +66,10 @@ export function registerChatHandlers() {
       const w = win();
       if (!w) return { success: false, error: "无窗口" };
       const { exportToTXT, exportToMarkdown } = await import("@sixtdreamnight/companion-engine");
-      const profile = loadProfile();
+      const profile = await loadProfile();
       const content = format === "md"
-        ? exportToMarkdown(GUI_USER_ID, profile)
-        : exportToTXT(GUI_USER_ID, profile);
+        ? await exportToMarkdown(GUI_USER_ID, profile)
+        : await exportToTXT(GUI_USER_ID, profile);
       const ext = format === "md" ? "md" : "txt";
       const result = await dialog.showSaveDialog(w, {
         title: "导出聊天记录",
@@ -90,24 +91,13 @@ export function registerChatHandlers() {
 
   safeHandle("chat:regenerate", async () => {
     try {
-      const lastUserMsg = removeLastTurn(GUI_USER_ID);
+      const lastUserMsg = await removeLastTurn(GUI_USER_ID);
       if (!lastUserMsg) {
         return { success: false, error: "没有可重新生成的消息" };
       }
-      if (!pipelineCtx) pipelineCtx = createPipelineContext();
+      if (!pipelineCtx) pipelineCtx = await createPipelineContext();
       const replies = await processMessage(GUI_USER_ID, lastUserMsg, pipelineCtx);
-
-      const w = win();
-      if (w) {
-        await new Promise(r => setTimeout(r, 800 + Math.random() * 1500));
-        w.webContents.send("chat:reply-chunk", { index: 0, total: replies.length, text: replies[0] });
-        for (let i = 1; i < replies.length; i++) {
-          w.webContents.send("chat:typing", { active: true });
-          await new Promise(r => setTimeout(r, 600 + Math.random() * 1000));
-          w.webContents.send("chat:reply-chunk", { index: i, total: replies.length, text: replies[i] });
-        }
-      }
-
+      await sendRepliesToRenderer(replies);
       return { success: true, replies };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : String(err) };
@@ -116,13 +106,13 @@ export function registerChatHandlers() {
 
   safeHandle("chat:search", async (_, query: string) => {
     const { searchConversations } = await import("@sixtdreamnight/companion-engine");
-    return searchConversations(query);
+    return await searchConversations(query);
   });
 
   // ---- 记忆 ----
   safeHandle("memory:get-facts", async () => {
     const { loadLongTerm } = await import("@sixtdreamnight/companion-engine");
-    return loadLongTerm().facts;
+    return (await loadLongTerm()).facts;
   });
 
   safeHandle("memory:update-fact", async (_, raw: unknown) => {
@@ -133,14 +123,14 @@ export function registerChatHandlers() {
       }
       const fact = parsed.data;
       const { loadLongTerm, updateFact, adjustFactImportance } = await import("@sixtdreamnight/companion-engine");
-      const memory = loadLongTerm();
+      const memory = await loadLongTerm();
       const exists = memory.facts.some((f) => f.topic === fact.topic);
       if (exists) {
-        adjustFactImportance(fact.topic, 0, fact.content);
+        await adjustFactImportance(fact.topic, 0, fact.content);
       } else {
-        updateFact(fact.topic, fact.content);
+        await updateFact(fact.topic, fact.content);
       }
-      return { success: true, data: loadLongTerm().facts };
+      return { success: true, data: (await loadLongTerm()).facts };
     } catch (err) {
       return { success: false, error: String(err) };
     }
@@ -149,8 +139,8 @@ export function registerChatHandlers() {
   safeHandle("memory:delete-fact", async (_, topic: string) => {
     try {
       const { deleteFact, loadLongTerm } = await import("@sixtdreamnight/companion-engine");
-      deleteFact(topic);
-      return { success: true, data: loadLongTerm().facts };
+      await deleteFact(topic);
+      return { success: true, data: (await loadLongTerm()).facts };
     } catch (err) {
       return { success: false, error: String(err) };
     }
@@ -163,7 +153,7 @@ export function registerChatHandlers() {
       if (!parsed.success) {
         return { success: false, error: parsed.error.issues[0].message };
       }
-      saveFeedback(GUI_USER_ID, {
+      await saveFeedback(GUI_USER_ID, {
         ...parsed.data,
         timestamp: new Date().toISOString(),
       });

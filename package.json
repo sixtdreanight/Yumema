@@ -1,7 +1,7 @@
 {
   "name": "yumema",
-  "version": "0.2.1",
-  "description": "梦间 / Yumema — AI 伴侣桌面应用",
+  "version": "0.3.0",
+  "description": "梦间 / Yumema — AI 伴侣桌面应用（桌面端 + 移动端）",
   "author": "DreamNight <erk163@163.com>",
   "license": "GPL-3.0",
   "repository": {
@@ -24,7 +24,7 @@
     "package:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
-    "@sixtdreamnight/companion-engine": "^0.2.2",
+    "@sixtdreamnight/companion-engine": "^0.4.0",
     "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/openai": "^3.0.53",
     "@assistant-ui/react": "^0.12.28",

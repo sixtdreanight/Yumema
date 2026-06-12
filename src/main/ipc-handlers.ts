@@ -15,7 +15,7 @@ import { updateConfigSchema, profileSchema } from "../shared/ipc-schemas.js";
 import { registerChatHandlers, pipelineInvalidate } from "./handlers/chat-handlers.js";
 import { registerSetupHandlers } from "./handlers/setup-handlers.js";
 
-export function registerIpcHandlers() {
+export async function registerIpcHandlers() {
   registerChatHandlers();
   registerSetupHandlers();
 
@@ -82,8 +82,8 @@ export function registerIpcHandlers() {
     return getAllMBTITypes();
   });
 
-  safeHandle("settings:get-config", () => {
-    const config = loadConfig();
+  safeHandle("settings:get-config", async () => {
+    const config = await loadConfig();
     const hasApiKey = !!config.ai?.apiKey;
     return {
       ...config,
@@ -95,14 +95,14 @@ export function registerIpcHandlers() {
     };
   });
 
-  safeHandle("settings:update-config", (_, raw: unknown) => {
+  safeHandle("settings:update-config", async (_, raw: unknown) => {
     try {
       const parsed = updateConfigSchema.safeParse(raw);
       if (!parsed.success) {
         return { success: false, error: parsed.error.issues[0].message };
       }
       const partial = parsed.data;
-      writeEnvFile({
+      await writeEnvFile({
         ai: partial.ai ? {
           provider: partial.ai.provider,
           model: partial.ai.model,
@@ -128,14 +128,14 @@ export function registerIpcHandlers() {
     }
   });
 
-  safeHandle("settings:update-profile", (_, raw: unknown) => {
+  safeHandle("settings:update-profile", async (_, raw: unknown) => {
     try {
       const data = raw as Record<string, unknown> | undefined;
       if (!data || typeof data !== "object") {
         return { success: false, error: "数据无效" };
       }
 
-      const existing = loadProfile();
+      const existing = await loadProfile();
       if (!existing) {
         return { success: false, error: "角色卡不存在" };
       }
@@ -153,7 +153,7 @@ export function registerIpcHandlers() {
 
       const dDir = resolve(getDataRoot(), "data");
       const profilePath = resolve(dDir, "profile.json");
-      writeFileAtomic(profilePath, JSON.stringify(merged, null, 2));
+      await writeFileAtomic(profilePath, JSON.stringify(merged, null, 2));
       pipelineInvalidate();
       return { success: true };
     } catch (err) {
@@ -193,7 +193,7 @@ export function registerIpcHandlers() {
 
   safeHandle("app:export-chat", async (_, format: "json" | "txt") => {
     try {
-      const history = loadShortTerm(GUI_USER_ID, 1000);
+      const history = await loadShortTerm(GUI_USER_ID, 1000);
       const ext = format === "json" ? "json" : "txt";
       const result = await dialog.showSaveDialog({
         defaultPath: `chat-history.${ext}`,
@@ -228,9 +228,9 @@ export function registerIpcHandlers() {
   });
 
   // ---- 自动启动已配置的服务 ----
-  const profile = loadProfile();
+  const profile = await loadProfile();
   if (profile) {
-    const config = loadConfig();
+    const config = await loadConfig();
     if (config.qq.wsUrl && config.qq.accessToken) {
       try {
         napCatManager.start().catch((err) => {

@@ -8,6 +8,7 @@ import { GlassCard, CardHeader } from "../components/ui/GlassCard";
 import SettingsDialog from "../components/shared/SettingsDialog";
 import UpdateToast from "../components/shared/UpdateToast";
 import SurveyDialog, { shouldShowSurvey } from "../components/shared/SurveyDialog";
+import { getModels, isCustomModelProvider } from "../lib/models";
 import NapCatSetup from "./NapCatSetup";
 import WeChatSetup from "./WeChatSetup";
 
@@ -87,7 +88,8 @@ export default function ChatWindow() {
           <div style={{ padding: "0 16px 12px", WebkitAppRegion: "no-drag" }}>
             <button onClick={async () => {
               const prev = currentModel;
-              const models = currentModel.includes("claude") ? ["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"] : currentModel.includes("gpt") ? ["gpt-4o", "gpt-4o-mini"] : [currentModel];
+              const provider = currentModel.includes("claude") ? "anthropic" : currentModel.includes("gpt") ? "openai" : null;
+              const models = provider ? getModels(provider) : [currentModel];
               const next = models[((models.indexOf(currentModel) + 1) % models.length)] || models[0];
               if (next !== currentModel) { try { await window.api.updateConfig({ ai: { model: next } }); setCurrentModel(next); } catch { setCurrentModel(prev); } }
             }} className="w-full text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors truncate text-center">{currentModel}</button>
@@ -101,7 +103,7 @@ export default function ChatWindow() {
           {sidebarItem(<MessageCircleHeart size={24} />, "反馈", () => setShowSurvey(true))}
           {sidebarItem(<Settings size={24} />, "设置", () => setShowSettings(true))}
         </div>
-        <Text size="1" color="gray" align="center" style={{ padding: "12px 0", WebkitAppRegion: "no-drag" }}>v0.1.1</Text>
+        <Text size="1" color="gray" align="center" style={{ padding: "12px 0", WebkitAppRegion: "no-drag" }}>v{appVersion || "0.0.0"}</Text>
       </nav>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>

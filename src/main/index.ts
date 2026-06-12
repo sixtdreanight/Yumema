@@ -132,7 +132,7 @@ app.on("before-quit", () => {
   weChatManager.stop();
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // CSP: restrict renderer to app-owned resources only (production only; Vite dev server needs looser CSP)
   if (!process.env.ELECTRON_RENDERER_URL) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -154,16 +154,16 @@ app.whenReady().then(() => {
   const isDev = !!process.env.ELECTRON_RENDERER_URL;
   const __dirname = fileURLToPath(new URL(".", import.meta.url));
   const dataRoot = isDev ? join(__dirname, "..", "..") : app.getPath("userData");
-  initDataRoot(dataRoot);
+  await initDataRoot(dataRoot);
   const dataDir = join(getDataRoot(), "data");
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(join(dataDir, "conversations"), { recursive: true });
   mkdirSync(join(dataDir, "feedback"), { recursive: true });
 
   // 启用文件日志输出
-  setLogFile(join(getDataRoot(), "logs", "app.log"));
+  await setLogFile(join(getDataRoot(), "logs", "app.log"));
 
-  registerIpcHandlers();
+  await registerIpcHandlers();
   setupAutoUpdater();
 
   // 延迟检查更新，避免启动时卡顿
@@ -173,7 +173,7 @@ app.whenReady().then(() => {
     }
   }, 30000);
 
-  const profile = loadProfile();
+  const profile = await loadProfile();
   if (profile) {
     startScheduler({
       profile,
@@ -195,8 +195,9 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("activate", () => {
+app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow(loadProfile() ? "chat" : "setup");
+    const p = await loadProfile();
+    createWindow(p ? "chat" : "setup");
   }
 });

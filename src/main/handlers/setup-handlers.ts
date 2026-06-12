@@ -16,12 +16,12 @@ function win() { return BrowserWindow.getAllWindows()[0] ?? null; }
 
 export function registerSetupHandlers() {
   // ---- 应用状态 ----
-  safeHandle("app:get-state", () => {
-    const profile = loadProfile();
+  safeHandle("app:get-state", async () => {
+    const profile = await loadProfile();
     return {
       hasProfile: !!profile,
       profile: profile ?? null,
-      config: loadConfig(),
+      config: await loadConfig(),
     };
   });
 
@@ -65,7 +65,7 @@ export function registerSetupHandlers() {
     }
   });
 
-  safeHandle("setup:save-profile", (_, raw: unknown) => {
+  safeHandle("setup:save-profile", async (_, raw: unknown) => {
     try {
       const data = raw as Record<string, unknown>;
       const root = getDataRoot();
@@ -89,13 +89,13 @@ export function registerSetupHandlers() {
 
       const relationshipMode = parsed.data.relationship_mode || "direct";
       const profilePath = resolve(dDir, "profile.json");
-      writeFileAtomic(profilePath, JSON.stringify(profile, null, 2));
+      await writeFileAtomic(profilePath, JSON.stringify(profile, null, 2));
 
       if (!existsSync(profilePath)) {
         return { success: false, error: "profile.json 写入后验证失败：文件不存在" };
       }
 
-      writeFileAtomic(
+      await writeFileAtomic(
         resolve(dDir, "relationship.json"),
         JSON.stringify(createRelationshipState(relationshipMode), null, 2),
       );
@@ -104,7 +104,7 @@ export function registerSetupHandlers() {
       const qq = data.qq as Record<string, unknown> | undefined;
       const wechat = data.wechat as Record<string, unknown> | undefined;
       if (ai || qq || wechat) {
-        writeEnvFile({
+        await writeEnvFile({
           ai: ai ? {
             provider: ai.provider as AIConfig["provider"],
             model: ai.model as string | undefined,
@@ -175,7 +175,7 @@ export function registerSetupHandlers() {
       }
       const dDir = resolve(getDataRoot(), "data");
       if (!existsSync(dDir)) mkdirSync(dDir, { recursive: true });
-      writeFileAtomic(resolve(dDir, "profile.json"), raw);
+      await writeFileAtomic(resolve(dDir, "profile.json"), raw);
       pipelineInvalidate();
       return { success: true };
     } catch (err) {
@@ -184,7 +184,7 @@ export function registerSetupHandlers() {
   });
 
   // ---- 问卷反馈 ----
-  safeHandle("survey:submit", (_, raw: unknown) => {
+  safeHandle("survey:submit", async (_, raw: unknown) => {
     try {
       const parsed = surveySchema.safeParse(raw);
       if (!parsed.success) {
@@ -201,7 +201,7 @@ export function registerSetupHandlers() {
         version: app.getVersion(),
         time: new Date().toISOString(),
       };
-      writeFileAtomic(resolve(feedbackDir, filename), JSON.stringify(content, null, 2));
+      await writeFileAtomic(resolve(feedbackDir, filename), JSON.stringify(content, null, 2));
       return { success: true };
     } catch (err) {
       return { success: false, error: String(err) };

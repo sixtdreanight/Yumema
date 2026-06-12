@@ -25,8 +25,8 @@ export interface WeChatState {
 // ---- 常量 ----
 
 const CONTAINER_NAME = "gewe";
-// NOTE: 生产环境建议使用 `gewe@sha256:...` 固定镜像摘要，防止上游镜像被篡改。
-// 当前使用 `:latest` 标签，适合开发环境。部署时请替换为具体版本标签或 SHA256 摘要。
+// SECURITY WARNING: 生产环境建议使用 `gewe@sha256:...` 固定镜像摘要，防止上游镜像被篡改。
+// 当前使用 `:latest` 标签，部署时请替换为具体版本标签或 SHA256 摘要。
 const IMAGE_NAME = "gewe:latest";
 const HOST_PORTS = "2531-2532";
 

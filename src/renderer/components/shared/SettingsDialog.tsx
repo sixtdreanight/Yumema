@@ -6,24 +6,7 @@ import {
 import { Heart } from "lucide-react";
 import { GlassCard, CardHeader } from "../ui/GlassCard";
 import ToggleTag from "../shared/ToggleTag";
-
-const ANTHROPIC_MODELS = [
-  "claude-sonnet-4-20250514",
-  "claude-opus-4-20250514",
-  "claude-haiku-4-20250514",
-];
-
-const OPENAI_MODELS = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"];
-
-function getModels(provider: string) {
-  if (provider === "anthropic") return ANTHROPIC_MODELS;
-  if (provider === "openai") return OPENAI_MODELS;
-  return [];
-}
-
-function isCustomModelProvider(provider: string) {
-  return provider === "openai-compatible" || provider === "ollama";
-}
+import { getModels, isCustomModelProvider } from "../../lib/models";
 
 // ---- 角色卡编辑的标签选项 ----
 const TEMPERAMENT_TAGS = ["温柔", "活泼", "傲娇", "高冷", "粘人", "腹黑", "天然呆", "毒舌", "元气", "慵懒"];
@@ -343,7 +326,7 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
                     </Select.Root>
                   </Flex>
 
-                  <Button onClick={handleAiSave} disabled={aiSaving || (aiProvider !== "ollama" && !aiApiKey.trim())}>
+                  <Button onClick={handleAiSave} disabled={aiSaving || (aiProvider !== "ollama" && !aiApiKey.trim() && !hasApiKey)}>
                     {aiSaved ? "已保存" : "保存 AI 配置"}
                   </Button>
                 </Flex>
@@ -679,7 +662,7 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
                   </Flex>
                   <Flex direction="column" align="center" gap="1">
                     <h4 className="text-lg font-semibold">梦间 / Yumema</h4>
-                    <Text size="1" color="gray">{appVersion || "v0.1.1"}</Text>
+                    <Text size="1" color="gray">v{appVersion || "0.0.0"}</Text>
                   </Flex>
                 </Flex>
 

@@ -1,5 +1,19 @@
 # 梦间 (Yumema) 更新路线图
 
+## v0.3.0 — 移动端 + 生产就绪 ✅ (2026-06-12)
+
+### 移动端
+- ✅ React Native 独立应用：companion 直接运行在手机上
+- ✅ RNFS StorageAdapter + AsyncStorage KVStore 平台适配器
+- ✅ 8 步设置向导、FlatList 聊天界面、暗色模式
+- ✅ companion-engine v0.4.0 平台抽象化（StorageAdapter/KVStore 可注入接口）
+
+### 质量保障
+- ✅ CI 增加 electron-vite build 全量类型检查
+- ✅ SHA256 校验安全加固 + gewe 镜像风险标记
+- ✅ 6 个 bug 修复（版本号、API key、类型补全、模型常量、死代码清理、重复逻辑）
+- ✅ NapCatQQ 异常退出自动重启 + 端口冲突友好提示
+
 ## v0.0.2 — 架构重构 + 竞品补齐 (2026-05)
 
 ### Bug 修复

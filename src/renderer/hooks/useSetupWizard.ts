@@ -11,7 +11,7 @@ export interface WizardData {
   nickname: string;
   customStyle: string;
   memeStyle: string;
-  aiProvider: "anthropic" | "openai" | "openai-compatible";
+  aiProvider: "anthropic" | "openai" | "openai-compatible" | "ollama";
   aiModel: string;
   aiApiKey: string;
   aiBaseUrl: string;

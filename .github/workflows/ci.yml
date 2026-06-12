@@ -22,5 +22,7 @@ jobs:
         run: npm ci
       - name: Type check
         run: npx tsc --noEmit
+      - name: Build check (main + preload + renderer)
+        run: npx electron-vite build
       - name: Run tests
         run: npx vitest run

@@ -10,3 +10,4 @@ data/*.json
 .DS_Store
 
 logs/
+crashes/

@@ -251,6 +251,8 @@ export class NapCatManager {
   private token: string = "";
   private listeners: Array<(state: NapCatState) => void> = [];
   private killTimeout: ReturnType<typeof setTimeout> | null = null;
+  private restartCount = 0;
+  private readonly maxRestarts = 3;
 
   getState(): NapCatState {
     return { ...this.state };
@@ -340,9 +342,8 @@ export class NapCatManager {
     const shaAsset = release.assets.find((a) => a.name === `${asset}.sha256`);
     if (shaAsset) {
       try {
-        const shaUrl = useMirror
-          ? `${GH_PROXY}/${shaAsset.browser_download_url}`
-          : shaAsset.browser_download_url;
+        // SHA256 校验文件始终从 GitHub 直连获取，不使用镜像（防止镜像同时篡改 zip 和校验和）
+        const shaUrl = shaAsset.browser_download_url;
         const shaRes = await fetch(shaUrl);
         const expectedHash = (await shaRes.text()).trim().split(/\s+/)[0];
         const crypto = await import("node:crypto");
@@ -390,7 +391,7 @@ export class NapCatManager {
     writeFileSync(join(configDir, "onebot11.json"), JSON.stringify(config, null, 2), "utf-8");
 
     // 合并写入 .env 供 Yumema 使用（不覆盖已有的 AI 配置）
-    writeEnvFile({
+    await writeEnvFile({
       qq: {
         wsUrl: `ws://127.0.0.1:${WS_PORT}`,
         accessToken: this.token,
@@ -403,6 +404,7 @@ export class NapCatManager {
   /** 启动 NapCatQQ */
   async start(): Promise<void> {
     if (this.process) return;
+    this.restartCount = 0;
 
     if (!this.isInstalled()) {
       this.setStatus("error", "NapCatQQ 未安装");
@@ -439,7 +441,11 @@ export class NapCatManager {
       });
 
       this.process.on("error", (err) => {
-        this.setStatus("error", `NapCatQQ 启动失败: ${err.message}`);
+        if ((err as NodeJS.ErrnoException).code === "EADDRINUSE") {
+          this.setStatus("error", "端口 3001 被占用，请关闭占用程序后重试");
+        } else {
+          this.setStatus("error", `NapCatQQ 启动失败: ${err.message}`);
+        }
         this.process = null;
       });
 
@@ -448,8 +454,12 @@ export class NapCatManager {
           clearTimeout(this.killTimeout);
           this.killTimeout = null;
         }
-        if (code !== 0 && this.state.status !== "error") {
-          this.setStatus("error", `NapCatQQ 异常退出 (code=${code})`);
+        if (code !== 0 && this.restartCount < this.maxRestarts) {
+          this.restartCount++;
+          logger.warn(`NapCatQQ exited with code ${code}, restarting (${this.restartCount}/${this.maxRestarts})...`);
+          setTimeout(() => { if (this.state.status === "error" || this.state.status === "stopped") this.start(); }, 5000);
+        } else if (code !== 0 && this.state.status !== "error") {
+          this.setStatus("error", `NapCatQQ 多次异常退出 (code=${code})，已停止自动重启`);
         } else if (this.state.status !== "stopped" && this.state.status !== "error") {
           this.setStatus("stopped", "NapCatQQ 已停止");
         }

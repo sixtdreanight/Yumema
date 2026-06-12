@@ -1,62 +1,59 @@
-# Contributing to Yumema
+# Contributing to Yumema (梦间)
 
-Thanks for your interest in contributing!
+Thank you for your interest in contributing!
 
-## Getting Started
+## Ways to Contribute
+
+- **Bug reports**: Use the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.md) template
+- **Feature requests**: Use the [Feature Request](.github/ISSUE_TEMPLATE/feature_request.md) template
+- **Code**: Fork, branch, commit, open a PR
+- **Translations**: Help translate README and docs to more languages
+- **Testing**: Run the app and report issues
+
+## Development Setup
 
 ```bash
 git clone https://github.com/sixtdreanight/Yumema.git
 cd Yumema
 npm install
-npx vitest run
+npm run dev
 ```
 
-## Development Workflow
+See [docs/development.md](docs/development.md) for detailed setup.
 
-1. Fork the repo and create a branch from `main`
-2. Make your changes
-3. Run `npx tsc --noEmit` to type-check
-4. Run `npx vitest run` to verify all tests pass
-5. Add tests for new functionality
-6. Commit using [Conventional Commits][conv] format
-7. Push and open a pull request
+**Mobile app** (see `mobile/` directory):
+```bash
+cd mobile
+npm install
+npx react-native run-ios    # or run-android
+```
 
 ## Commit Convention
 
 ```
-feat: add group chat support
-fix: prevent process.env leak in renderer
-refactor: migrate core to companion-engine npm
-test: add unit tests for NapCat manager
-docs: update architecture docs
+<type>: <description>
 ```
 
-Types: `feat` `fix` `refactor` `test` `docs` `chore` `perf` `ci`
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `security`
+
+## Pull Request Process
+
+1. Ensure CI passes (`npm run build` + `npm test`)
+2. Update CHANGELOG.md if applicable
+3. Describe what changed and why in the PR description
 
 ## Code Style
 
-- TypeScript strict mode enabled
-- Prefer immutability: return new objects, don't mutate
-- Functions under 50 lines; files under 800 lines
-- Use early returns to avoid deep nesting
-- Electron main/renderer separation must be maintained
+- TypeScript strict mode
+- React function components + hooks
+- No `console.log` — use the logger from `@sixtdreamnight/companion-engine`
+- Prefer immutable patterns
+- Write tests for new functionality
 
-## Testing
+## Project Structure
 
-- Minimum 80% coverage for new code
-- AAA pattern (Arrange, Act, Assert)
-- Mock Electron APIs in unit tests
-
-## Pull Request Checklist
-
-- [ ] TypeScript compiles without errors
-- [ ] All tests pass (`npx vitest run`)
-- [ ] New tests added for new behavior
-- [ ] Electron security best practices followed
-- [ ] Breaking changes noted in PR description
+See [docs/architecture.md](docs/architecture.md) for the full architecture overview.
 
 ## Questions?
 
-Open a [discussion](https://github.com/sixtdreanight/Yumema/discussions).
-
-[conv]: https://www.conventionalcommits.org/
+Open an issue or email erk163@163.com.
