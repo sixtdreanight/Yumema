@@ -24,7 +24,6 @@
     "package:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
-    "@sixtdreamnight/companion-engine": "^0.5.0",
     "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/openai": "^3.0.53",
     "@assistant-ui/react": "^0.12.28",
@@ -39,6 +38,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/themes": "^3.3.0",
+    "@sixtdreamnight/companion-engine": "^0.5.0",
     "ai": "^6.0.168",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
