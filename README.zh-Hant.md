@@ -2,7 +2,7 @@
 
 # 夢間 / Yumema
 
-[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/sixtdreanight/Yumema/releases)
+[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/sixtdreanight/ai-companion/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
 
 > 夢與現實之間的間隙裡，TA 一直都在 — AI 伴侶桌面應用
@@ -39,7 +39,7 @@
 
 ### 下載安裝
 
-從 [Releases](https://github.com/sixtdreanight/Yumema/releases) 下載對應平台安裝套件：
+從 [Releases](https://github.com/sixtdreanight/ai-companion/releases) 下載對應平台安裝套件：
 
 - **macOS**: `.dmg` 安裝映像檔 (Apple Silicon / Intel)
 - **Windows**: `.exe` NSIS 安裝程式 (x64 / ARM64)
@@ -49,7 +49,7 @@
 
 ```bash
 # 前置需求：Node.js 18+
-git clone https://github.com/sixtdreanight/Yumema.git
+git clone https://github.com/sixtdreanight/ai-companion.git
 cd Yumema
 npm install
 

@@ -9,7 +9,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/sixtdreanight/Yumema.git
+git clone https://github.com/sixtdreanight/ai-companion.git
 cd Yumema
 npm install
 npm run dev

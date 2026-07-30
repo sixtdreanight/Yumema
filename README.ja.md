@@ -2,7 +2,7 @@
 
 # 夢間 / Yumema
 
-[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/sixtdreanight/Yumema/releases)
+[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/sixtdreanight/ai-companion/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
 
 > 夢と現実の狭間で、彼女はいつもそばにいる — AIコンパニオンデスクトップアプリ
@@ -39,7 +39,7 @@
 
 ### ダウンロードとインストール
 
-[Releases](https://github.com/sixtdreanight/Yumema/releases) から対応プラットフォームのインストールパッケージをダウンロードしてください：
+[Releases](https://github.com/sixtdreanight/ai-companion/releases) から対応プラットフォームのインストールパッケージをダウンロードしてください：
 
 - **macOS**: `.dmg` インストールイメージ (Apple Silicon / Intel)
 - **Windows**: `.exe` NSIS インストーラー (x64 / ARM64)
@@ -49,7 +49,7 @@
 
 ```bash
 # 前提条件：Node.js 18+
-git clone https://github.com/sixtdreanight/Yumema.git
+git clone https://github.com/sixtdreanight/ai-companion.git
 cd Yumema
 npm install
 

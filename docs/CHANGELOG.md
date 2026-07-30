@@ -237,11 +237,11 @@
 - 内置测试问卷
 - 暗色模式：跟随系统自动切换
 
-[0.0.1]: https://github.com/sixtdreanight/Yumema/releases/tag/v0.0.1
-[1.0.0-beta.7]: https://github.com/sixtdreanight/Yumema/compare/v1.0.0-beta.6...v1.0.0-beta.7
-[1.0.0-beta.6]: https://github.com/sixtdreanight/Yumema/compare/v1.0.0-beta.5...v1.0.0-beta.6
-[1.0.0-beta.5]: https://github.com/sixtdreanight/Yumema/compare/v1.0.0-beta.4...v1.0.0-beta.5
-[1.0.0-beta.4]: https://github.com/sixtdreanight/Yumema/compare/v1.0.0-beta.3...v1.0.0-beta.4
-[1.0.0-beta.3]: https://github.com/sixtdreanight/Yumema/compare/v1.0.0-beta.2...v1.0.0-beta.3
-[1.0.0-beta.2]: https://github.com/sixtdreanight/Yumema/compare/v1.0.0-beta.1...v1.0.0-beta.2
-[1.0.0-beta.1]: https://github.com/sixtdreanight/Yumema/releases/tag/v1.0.0-beta.1
+[0.0.1]: https://github.com/sixtdreanight/ai-companion/releases/tag/v0.0.1
+[1.0.0-beta.7]: https://github.com/sixtdreanight/ai-companion/compare/v1.0.0-beta.6...v1.0.0-beta.7
+[1.0.0-beta.6]: https://github.com/sixtdreanight/ai-companion/compare/v1.0.0-beta.5...v1.0.0-beta.6
+[1.0.0-beta.5]: https://github.com/sixtdreanight/ai-companion/compare/v1.0.0-beta.4...v1.0.0-beta.5
+[1.0.0-beta.4]: https://github.com/sixtdreanight/ai-companion/compare/v1.0.0-beta.3...v1.0.0-beta.4
+[1.0.0-beta.3]: https://github.com/sixtdreanight/ai-companion/compare/v1.0.0-beta.2...v1.0.0-beta.3
+[1.0.0-beta.2]: https://github.com/sixtdreanight/ai-companion/compare/v1.0.0-beta.1...v1.0.0-beta.2
+[1.0.0-beta.1]: https://github.com/sixtdreanight/ai-companion/releases/tag/v1.0.0-beta.1
