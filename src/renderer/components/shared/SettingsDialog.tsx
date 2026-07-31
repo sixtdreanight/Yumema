@@ -27,6 +27,7 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [aiTemperature, setAiTemperature] = useState([0.85]);
   const [aiSaving, setAiSaving] = useState(false);
   const [aiSaved, setAiSaved] = useState(false);
+  const [aiError, setAiError] = useState("");
   const [hasApiKey, setHasApiKey] = useState(false);
   const [contentFilter, setContentFilter] = useState<"strict" | "moderate" | "off">("strict");
 
@@ -128,6 +129,7 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
   const handleAiSave = async () => {
     setAiSaving(true);
     setAiSaved(false);
+    setAiError("");
     try {
       const result = await window.api.updateConfig({
         ai: {
@@ -142,13 +144,13 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
       });
       const r = result as { success?: boolean; error?: string };
       if (r && typeof r === "object" && r.success === false) {
-        alert(r.error || "保存失败");
+        setAiError(r.error || "保存失败");
       } else {
         setAiSaved(true);
         scheduleTimeout(() => setAiSaved(false), 2000);
       }
     } catch {
-      alert("保存失败，请重试");
+      setAiError("保存失败，请重试");
     } finally {
       setAiSaving(false);
     }
@@ -329,6 +331,9 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
                   <Button onClick={handleAiSave} disabled={aiSaving || (aiProvider !== "ollama" && !aiApiKey.trim() && !hasApiKey)}>
                     {aiSaved ? "已保存" : "保存 AI 配置"}
                   </Button>
+                  {aiError && (
+                    <Text size="1" style={{ color: "var(--red-9)" }}>{aiError}</Text>
+                  )}
                 </Flex>
               </Tabs.Content>
 

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
 import SetupWizard from "./pages/SetupWizard";
 import ChatWindow from "./pages/ChatWindow";
+import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 
 export default function App() {
@@ -29,7 +30,7 @@ export default function App() {
           <Routes>
             <Route path="/setup" element={<SetupWizard />} />
             <Route path="/chat" element={<ChatWindow />} />
-            <Route path="*" element={<Navigate to="/setup" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </HashRouter>
       </Theme>

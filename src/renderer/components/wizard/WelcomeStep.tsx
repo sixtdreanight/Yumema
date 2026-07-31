@@ -13,7 +13,18 @@ export default function WelcomeStep({ next }: { next: () => void }) {
         </Flex>
 
         <Flex direction="column" align="center" gap="2">
-          <Heading size="6">梦间 / Yumema</Heading>
+          <Heading
+            size="6"
+            style={{
+              background: "linear-gradient(135deg, var(--primary) 0%, #c4b5fd 55%, #93c5fd 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 0 12px rgba(240, 160, 184, 0.35))",
+            }}
+          >
+            梦间 / Yumema
+          </Heading>
           <Text size="2" color="gray">创建属于你的 AI 伴侣</Text>
         </Flex>
 

@@ -11,6 +11,7 @@ export default function QuickStartStep({
   update: (d: Record<string, unknown>) => void;
 }) {
   const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
 
   const applyTemplate = (t: RoleTemplate) => {
     update({
@@ -31,6 +32,7 @@ export default function QuickStartStep({
 
   const handleImport = async () => {
     setImporting(true);
+    setImportError("");
     try {
       const result = await window.api.importCard();
       const r = result as { success?: boolean; data?: Record<string, unknown>; error?: string };
@@ -47,10 +49,10 @@ export default function QuickStartStep({
         if (d.speaking_style) updateParseField("speaking_style", d.speaking_style);
         next();
       } else if (r.error && r.error !== "已取消") {
-        alert(r.error);
+        setImportError(r.error);
       }
     } catch {
-      alert("导入失败，请重试");
+      setImportError("导入失败，请重试");
     } finally {
       setImporting(false);
     }
@@ -90,6 +92,9 @@ export default function QuickStartStep({
       <Button variant="outline" size="lg" onClick={handleImport} disabled={importing}>
         {importing ? "导入中..." : "导入角色卡 (JSON/PNG)"}
       </Button>
+      {importError && (
+        <p className="text-xs text-destructive">{importError}</p>
+      )}
 
       <Button variant="ghost" size="lg" onClick={next}>
         从空白创建
