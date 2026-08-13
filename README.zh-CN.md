@@ -2,7 +2,7 @@
 
 # 梦间 / Yumema
 
-[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/sixtdreanight/ai-companion/releases)
+[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/dreamnight16/ai-companion/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
 
 > 梦与现实之间的间隙里，TA 一直都在 — AI 伴侣桌面应用
@@ -39,7 +39,7 @@
 
 ### 下载安装
 
-从 [Releases](https://github.com/sixtdreanight/ai-companion/releases) 下载对应平台安装包：
+从 [Releases](https://github.com/dreamnight16/ai-companion/releases) 下载对应平台安装包：
 
 - **macOS**: `.dmg` 安装镜像 (Apple Silicon / Intel)
 - **Windows**: `.exe` NSIS 安装程序 (x64 / ARM64)
@@ -49,7 +49,7 @@
 
 ```bash
 # 前置要求：Node.js 18+
-git clone https://github.com/sixtdreanight/ai-companion.git
+git clone https://github.com/dreamnight16/ai-companion.git
 cd Yumema
 npm install
 
@@ -162,7 +162,7 @@ docker run -itd -p 2531:2531 -p 2532:2532 --name=gewe gewe
 
 ## 相关项目
 
-- [companion-engine](https://github.com/sixtdreanight/companion-engine) — 驱动本应用的核心引擎
+- [companion-engine](https://github.com/dreamnight16/companion-engine) — 驱动本应用的核心引擎
 
 ## License
 

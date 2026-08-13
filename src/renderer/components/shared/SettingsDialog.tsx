@@ -678,7 +678,7 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
                   <Flex direction="column" gap="1" align="center" style={{ borderTop: "1px solid var(--gray-4)", paddingTop: 12 }}>
                     <Text size="1" color="gray">作者：梦夜十六</Text>
                     <Text size="1" color="gray">协议：GPL-3.0</Text>
-                    <Text size="1" color="gray">仓库：github.com/sixtdreanight/Yumema</Text>
+                    <Text size="1" color="gray">仓库：github.com/dreamnight16/Yumema</Text>
                     <Text size="1" color="gray">反馈：erk163@163.com</Text>
                   </Flex>
                   <Text size="1" color="gray" align="center" style={{ borderTop: "1px solid var(--gray-4)", paddingTop: 12 }}>

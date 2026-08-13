@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, createWriteStream, writeFileSync, readdirSync, s
 import { randomBytes } from "node:crypto";
 import { homedir } from "node:os";
 import { get } from "node:https";
-import { getDataRoot, writeEnvFile } from "@sixtdreamnight/companion-engine";
+import { getDataRoot, writeEnvFile, logger } from "@sixtdreamnight/companion-engine";
 
 // ---- 类型 ----
 

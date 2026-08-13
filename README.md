@@ -2,7 +2,7 @@
 
 # Yumema (梦间)
 
-[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/sixtdreanight/ai-companion/releases)
+[![Release](https://img.shields.io/badge/release-v0.1.1-blue)](https://github.com/dreamnight16/ai-companion/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)]()
 
 > In the space between dreams and reality, they've always been there.
@@ -39,7 +39,7 @@ An AI companion that lives on your desktop. Has a personality, hobbies, and memo
 
 ### Download
 
-Download the installer for your platform from [Releases](https://github.com/sixtdreanight/ai-companion/releases):
+Download the installer for your platform from [Releases](https://github.com/dreamnight16/ai-companion/releases):
 
 - **macOS**: `.dmg` image (Apple Silicon / Intel)
 - **Windows**: `.exe` NSIS installer (x64 / ARM64)
@@ -49,7 +49,7 @@ Download the installer for your platform from [Releases](https://github.com/sixt
 
 ```bash
 # Prerequisites: Node.js 18+
-git clone https://github.com/sixtdreanight/ai-companion.git
+git clone https://github.com/dreamnight16/ai-companion.git
 cd Yumema
 npm install
 
@@ -162,7 +162,7 @@ WeChat and QQ can be configured simultaneously and toggled in settings at any ti
 
 ## Related
 
-- [companion-engine](https://github.com/sixtdreanight/companion-engine) — The core engine that powers this app
+- [companion-engine](https://github.com/dreamnight16/companion-engine) — The core engine that powers this app
 
 ## License
 

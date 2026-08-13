@@ -8,7 +8,7 @@ tags: [Electron, TypeScript, AI, React, 桌面应用, 教程]
 
 折腾了好几个月，把"梦间 (Yumema)"从想法做成了一个能跑、能聊、能接 QQ 和微信的 AI 伴侣桌面应用。这篇文章把搭建过程从头拆一遍，不是"写一个聊天框连上 API 就完了"那种 demo，是真实踩坑之后沉淀下来的架构、取舍和细节。
 
-项目地址：[github.com/sixtdreanight/ai-companion](https://github.com/sixtdreanight/ai-companion)，当前版本 v0.1.1。
+项目地址：[github.com/dreamnight16/ai-companion](https://github.com/dreamnight16/ai-companion)，当前版本 v0.1.1。
 
 ---
 
@@ -347,4 +347,4 @@ GitHub Actions 做 CI/CD。推送 `v*` 标签 → 四个平台并行构建 → �
 
 希望这篇拆解对想做类似项目的人有点用。架构上没有黑魔法，就是把每个模块的边界划清楚，数据流方向定死，然后一行一行写。项目本身还在迭代，欢迎 issue / PR。
 
-*[github.com/sixtdreanight/ai-companion](https://github.com/sixtdreanight/ai-companion)*
+*[github.com/dreamnight16/ai-companion](https://github.com/dreamnight16/ai-companion)*

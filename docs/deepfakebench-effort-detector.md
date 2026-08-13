@@ -952,7 +952,7 @@ Registry = 名字→类的全局字典。`@XXX.register_module(name)` 注册。�
 **Q161: 复现本项目的完整步骤？**
 
 ```bash
-git clone git@github.com:sixtdreanight/LoRA-TextureTTA.git
+git clone git@github.com:dreamnight16/LoRA-TextureTTA.git
 cd DeepfakeBench
 # 创建环境: conda create -n effort python=3.10 && conda activate effort
 # 安装: pip install torch transformers albumentations scikit-learn loralib opencv-python tqdm pyyaml tensorboard
