@@ -69,7 +69,7 @@ async function terminalMode(pipelineCtx: Parameters<typeof processMessage>[2]) {
 
 // ---- QQ 模式 ----
 
-async function qqMode(pipelineCtx: Parameters<typeof processMessage>[2], config: ReturnType<typeof loadConfig>) {
+async function qqMode(pipelineCtx: Parameters<typeof processMessage>[2], config: Awaited<ReturnType<typeof loadConfig>>) {
   const p = pipelineCtx.profile;
 
   // 活跃用户追踪
@@ -118,7 +118,7 @@ async function qqMode(pipelineCtx: Parameters<typeof processMessage>[2], config:
 
 // ---- 微信模式 ----
 
-async function wechatMode(pipelineCtx: Parameters<typeof processMessage>[2], config: ReturnType<typeof loadConfig>) {
+async function wechatMode(pipelineCtx: Parameters<typeof processMessage>[2], config: Awaited<ReturnType<typeof loadConfig>>) {
   const p = pipelineCtx.profile;
 
   const activeUsers = new Set<string>();
@@ -177,7 +177,7 @@ async function main() {
   logger.info(`关系模式: ${modeLabel}`);
   logger.info(`AI 提供商: ${config.ai.provider}, 模型: ${config.ai.model}`);
 
-  const model = createAIProvider(config.ai);
+  const model = await createAIProvider(config.ai);
   const pipelineCtx = { model, config, profile: p };
 
   // 终端模式
