@@ -19,8 +19,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
-        # npm install (not npm ci) until package-lock.json is regenerated with vitest; run `npm install` locally and commit the lockfile to restore `npm ci`
-        run: npm install
+        run: npm ci
       - name: Type check
         run: |
           npx tsc --noEmit
