@@ -78,7 +78,7 @@ export function CardHeader({ title, onClose }: HeaderProps) {
   return (
     <div
       className="flex items-center justify-between"
-      style={{ padding: "20px 28px", WebkitAppRegion: "no-drag" as unknown as string }}
+      style={{ padding: "20px 28px", WebkitAppRegion: "no-drag" }}
     >
       <h3 className="text-base font-semibold" style={{ padding: 0, margin: 0 }}>{title}</h3>
       <button
@@ -110,7 +110,7 @@ export function DialogOverlay({ children, onClose, offset = "pt-20" }: OverlayPr
   return (
     <div
       className={`fixed inset-0 z-50 flex items-start justify-center ${offset} bg-black/20 backdrop-blur-sm fade-in`}
-      style={{ WebkitAppRegion: "no-drag" as unknown as string }}
+      style={{ WebkitAppRegion: "no-drag" }}
       onClick={onClose}
     >
       {children}

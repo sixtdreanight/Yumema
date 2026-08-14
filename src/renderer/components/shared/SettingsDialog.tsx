@@ -213,18 +213,18 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog.Root open onOpenChange={onClose}>
-      <Dialog.Content maxWidth="448px" style={{ padding: 0, background: "transparent", WebkitAppRegion: "no-drag" as unknown as string }}>
+      <Dialog.Content maxWidth="448px" style={{ padding: 0, background: "transparent", WebkitAppRegion: "no-drag" }}>
         <GlassCard padding="p-0">
           <CardHeader title="设置" onClose={onClose} />
           <Flex direction="column" maxHeight="70vh">
 
           <Tabs.Root defaultValue="ai" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
             <Tabs.List mx="5" className="glass-shine rounded-xl p-2">
-              <Tabs.Trigger value="ai" px="4" py="2">AI 配置</Tabs.Trigger>
-              <Tabs.Trigger value="memory" px="4" py="2">记忆</Tabs.Trigger>
-              <Tabs.Trigger value="character" px="4" py="2">角色卡</Tabs.Trigger>
-              <Tabs.Trigger value="data" px="4" py="2">数据</Tabs.Trigger>
-              <Tabs.Trigger value="about" px="4" py="2">关于</Tabs.Trigger>
+              <Tabs.Trigger value="ai" className="px-4 py-2">AI 配置</Tabs.Trigger>
+              <Tabs.Trigger value="memory" className="px-4 py-2">记忆</Tabs.Trigger>
+              <Tabs.Trigger value="character" className="px-4 py-2">角色卡</Tabs.Trigger>
+              <Tabs.Trigger value="data" className="px-4 py-2">数据</Tabs.Trigger>
+              <Tabs.Trigger value="about" className="px-4 py-2">关于</Tabs.Trigger>
             </Tabs.List>
 
             <Flex direction="column" px="6" py="5" gap="4" style={{ maxHeight: "50vh", overflowY: "auto" }}>

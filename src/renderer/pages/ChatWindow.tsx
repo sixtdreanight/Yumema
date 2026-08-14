@@ -25,6 +25,7 @@ export default function ChatWindow() {
   const [time, setTime] = useState("");
   const [avatarData, setAvatarData] = useState<string | null>(null);
   const [currentModel, setCurrentModel] = useState("");
+  const [appVersion, setAppVersion] = useState("");
 
   const doSearch = useCallback(async (query: string) => {
     const q = query.trim();
@@ -46,7 +47,7 @@ export default function ChatWindow() {
       .slice(0, 50));
   }, [messages]);
 
-  useEffect(() => { let m = true; window.api.getAvatar().then((d: unknown) => { if (m) setAvatarData(d as string | null); }); window.api.getConfig().then((c: unknown) => { if (!m) return; const ai = (c as { ai?: { model?: string } }).ai; if (ai?.model) setCurrentModel(ai.model); }); return () => { m = false; }; }, []);
+  useEffect(() => { let m = true; window.api.getAvatar().then((d: unknown) => { if (m) setAvatarData(d as string | null); }); window.api.getConfig().then((c: unknown) => { if (!m) return; const ai = (c as { ai?: { model?: string } }).ai; if (ai?.model) setCurrentModel(ai.model); }); window.api.getVersion().then((v: string) => { if (m) setAppVersion(v); }); return () => { m = false; }; }, []);
   useEffect(() => { setTime(new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })); const t = setInterval(() => setTime(new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })), 30000); return () => clearInterval(t); }, []);
   useEffect(() => { if (shouldShowSurvey()) setShowSurvey(true); }, []);
 

@@ -64,7 +64,7 @@ export default function WeChatSetup({ onBack }: { onBack: () => void }) {
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 </Flex>
-                <Text size="3" weight="semibold" style={{ color: "var(--green-9)" }}>微信已成功连接</Text>
+                <Text size="3" weight="bold" style={{ color: "var(--green-9)" }}>微信已成功连接</Text>
                 <Button color="red" variant="soft" onClick={handleStop} style={{ width: "100%" }}>停止服务</Button>
                 <Button onClick={onBack} style={{ width: "100%" }}>返回聊天</Button>
               </Flex>
@@ -93,7 +93,7 @@ export default function WeChatSetup({ onBack }: { onBack: () => void }) {
                     <path d="M12 8v4M12 16h.01" />
                   </svg>
                 </Flex>
-                <Text size="3" weight="semibold">未检测到 Docker</Text>
+                <Text size="3" weight="bold">未检测到 Docker</Text>
                 <Text size="2" color="gray" align="center">
                   微信接入需要 Docker 环境运行 Gewechat 服务。<br />
                   请先安装 <a href="https://www.docker.com" target="_blank" rel="noreferrer">Docker Desktop</a>

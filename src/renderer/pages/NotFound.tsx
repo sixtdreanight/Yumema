@@ -13,7 +13,7 @@ export default function NotFound() {
             <Compass size={28} color="var(--primary)" />
           </Flex>
           <Flex direction="column" align="center" gap="2">
-            <Text size="4" weight="semibold">页面不存在</Text>
+            <Text size="4" weight="bold">页面不存在</Text>
             <Text size="2" color="gray">你似乎走到了梦的边界，回到熟悉的地方吧</Text>
           </Flex>
           <Flex gap="2" justify="center">

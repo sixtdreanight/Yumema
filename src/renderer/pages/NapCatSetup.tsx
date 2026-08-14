@@ -69,7 +69,7 @@ export default function NapCatSetup({ onBack }: { onBack: () => void }) {
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 </Flex>
-                <Text size="3" weight="semibold" style={{ color: "var(--green-9)" }}>QQ 已成功连接</Text>
+                <Text size="3" weight="bold" style={{ color: "var(--green-9)" }}>QQ 已成功连接</Text>
                 <Button onClick={onBack} style={{ width: "100%" }}>返回聊天</Button>
               </Flex>
             )}

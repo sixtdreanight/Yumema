@@ -50,7 +50,7 @@ export default function SetupWizard() {
             }
           </Flex>
           <Flex direction="column" align="center" gap="2">
-            <Text size="4" weight="semibold">
+            <Text size="4" weight="bold">
               {transitionTimedOut ? "启动超时" : "正在创建你的 AI 伴侣..."}
             </Text>
             <Text size="2" color="gray">
