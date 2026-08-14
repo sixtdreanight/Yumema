@@ -9,15 +9,15 @@ import { logger, GUI_USER_ID } from "@sixtdreamnight/companion-engine";
 import { loadShortTerm, removeLastTurn } from "@sixtdreamnight/companion-engine";
 import { memoryFactSchema, feedbackSchema, sendMessageSchema, searchSchema } from "../../shared/ipc-schemas.js";
 import { saveFeedback } from "@sixtdreamnight/companion-engine";
-import type { LanguageModel } from "ai";
+import type { PipelineContext } from "@sixtdreamnight/companion-engine";
 
-let pipelineCtx: { model: LanguageModel; config: ReturnType<typeof loadConfig>; profile: ReturnType<typeof loadProfile> } | null = null;
+let pipelineCtx: PipelineContext | null = null;
 
-async function createPipelineContext() {
+async function createPipelineContext(): Promise<PipelineContext> {
   const config = await loadConfig();
   const profile = await loadProfile();
   if (!profile) throw new Error("Profile not found");
-  const model = createAIProvider(config.ai);
+  const model = await createAIProvider(config.ai);
   return { model, config, profile };
 }
 
