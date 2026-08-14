@@ -7,7 +7,7 @@ import { processMessage, createAIProvider } from "@sixtdreamnight/companion-engi
 import { loadConfig, loadProfile, getDataRoot } from "@sixtdreamnight/companion-engine";
 import { logger, GUI_USER_ID } from "@sixtdreamnight/companion-engine";
 import { loadShortTerm, removeLastTurn } from "@sixtdreamnight/companion-engine";
-import { memoryFactSchema, feedbackSchema } from "../../shared/ipc-schemas.js";
+import { memoryFactSchema, feedbackSchema, sendMessageSchema, searchSchema } from "../../shared/ipc-schemas.js";
 import { saveFeedback } from "@sixtdreamnight/companion-engine";
 import type { LanguageModel } from "ai";
 
@@ -43,8 +43,12 @@ export function registerChatHandlers() {
   // ---- 聊天 ----
   safeHandle("chat:send", async (_, message: string) => {
     try {
+      const parsed = sendMessageSchema.safeParse({ message });
+      if (!parsed.success) {
+        return { success: false, error: parsed.error.issues[0].message };
+      }
       if (!pipelineCtx) pipelineCtx = await createPipelineContext();
-      const replies = await processMessage(GUI_USER_ID, message, pipelineCtx);
+      const replies = await processMessage(GUI_USER_ID, parsed.data.message, pipelineCtx);
       await sendRepliesToRenderer(replies);
       return { success: true, data: { replies } };
     } catch (err) {
@@ -105,8 +109,12 @@ export function registerChatHandlers() {
   });
 
   safeHandle("chat:search", async (_, query: string) => {
+    const parsed = searchSchema.safeParse({ query });
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
     const { searchConversations } = await import("@sixtdreamnight/companion-engine");
-    return await searchConversations(query);
+    return await searchConversations(parsed.data.query);
   });
 
   // ---- 记忆 ----

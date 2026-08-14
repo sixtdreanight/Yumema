@@ -1,4 +1,0 @@
-2026-05-01T06:04:32.064Z uncaughtException
-TypeError: schedulerStop is not a function
-    at EventEmitter.<anonymous> (file:///Users/mengyeshiliu/code/agent/V-partner/dist/main/index.js:3903:18)
-    at EventEmitter.emit (node:events:509:28)

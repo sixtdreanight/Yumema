@@ -543,3 +543,13 @@ button:focus-visible {
   animation: pulse-ring 2s infinite;
 }
 
+/* ===== Radix Themes select/popover background overrides ===== */
+/* Moved out of index.html inline <style> so the production CSP can drop
+   style-src 'unsafe-inline' (blocking inline <style> elements) without
+   breaking these overrides. */
+.rt-SelectContent { background: #ffffff !important; background-image: none !important; }
+.dark .rt-SelectContent { background: #1f1f23 !important; background-image: none !important; }
+.rt-PopoverContent { background: #ffffff !important; background-image: none !important; }
+.dark .rt-PopoverContent { background: #1f1f23 !important; background-image: none !important; }
+.rt-SelectViewport { background: transparent !important; }
+

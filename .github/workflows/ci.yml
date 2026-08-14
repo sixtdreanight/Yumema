@@ -22,7 +22,10 @@ jobs:
         # npm install (not npm ci) until package-lock.json is regenerated with vitest; run `npm install` locally and commit the lockfile to restore `npm ci`
         run: npm install
       - name: Type check
-        run: npx tsc --noEmit
+        run: |
+          npx tsc --noEmit
+          npx tsc --noEmit -p tsconfig.node.json
+          npx tsc --noEmit -p tsconfig.web.json
       - name: Build check (main + preload + renderer)
         run: npx electron-vite build
       - name: Run tests

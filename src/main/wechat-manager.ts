@@ -25,9 +25,11 @@ export interface WeChatState {
 // ---- 常量 ----
 
 const CONTAINER_NAME = "gewe";
-// SECURITY WARNING: 生产环境建议使用 `gewe@sha256:...` 固定镜像摘要，防止上游镜像被篡改。
-// 当前使用 `:latest` 标签，部署时请替换为具体版本标签或 SHA256 摘要。
-const IMAGE_NAME = "gewe:latest";
+// SECURITY: 固定镜像版本，避免 `:latest` 标签漂移导致的供应链风险。
+// Gewechat 上游未发布语义化版本标签，社区维护的 Alpine 镜像提供固定 `alpine` 标签。
+// 若要进一步加固，请在部署后用 `docker image inspect --format '{{.RepoDigests}}'` 获取
+// 实际 SHA256 摘要并替换为 `ghcr.io/tu1h/wechotd/wechotd@sha256:...`。
+const IMAGE_NAME = "ghcr.io/tu1h/wechotd/wechotd:alpine";
 const HOST_PORTS = "2531-2532";
 
 function dockerInstallGuide(): string {

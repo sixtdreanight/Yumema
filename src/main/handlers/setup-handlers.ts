@@ -10,7 +10,7 @@ import { pipelineInvalidate } from "./chat-handlers.js";
 import { validateProfile } from "@sixtdreamnight/companion-engine";
 import { createRelationshipState } from "@sixtdreamnight/companion-engine";
 import { parseDescription } from "../../cli/setup.js";
-import { profileSchema, surveySchema } from "../../shared/ipc-schemas.js";
+import { profileSchema, surveySchema, parseDescriptionSchema } from "../../shared/ipc-schemas.js";
 
 function win() { return BrowserWindow.getAllWindows()[0] ?? null; }
 
@@ -18,16 +18,30 @@ export function registerSetupHandlers() {
   // ---- 应用状态 ----
   safeHandle("app:get-state", async () => {
     const profile = await loadProfile();
+    const config = await loadConfig();
+    const hasApiKey = !!config.ai?.apiKey;
     return {
       hasProfile: !!profile,
       profile: profile ?? null,
-      config: await loadConfig(),
+      // 与 settings:get-config 一致：绝不把明文 API Key 暴露给渲染进程。
+      config: {
+        ...config,
+        ai: config.ai ? {
+          ...config.ai,
+          apiKey: "",
+          hasApiKey,
+        } : undefined,
+      },
     };
   });
 
   // ---- 设置向导 ----
   safeHandle("setup:parse-description", (_, desc: string) => {
-    return parseDescription(desc);
+    const parsed = parseDescriptionSchema.safeParse({ description: desc });
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+    return parseDescription(parsed.data.description);
   });
 
   safeHandle("setup:import-card", async () => {

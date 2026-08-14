@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
 import { registerIpcHandlers } from "./ipc-handlers.js";
-import { loadProfile, getDataRoot, initDataRoot } from "@sixtdreamnight/companion-engine";
+import { loadProfile, loadConfig, getDataRoot, initDataRoot } from "@sixtdreamnight/companion-engine";
 import { logger, setLogFile, GUI_USER_ID } from "@sixtdreamnight/companion-engine";
 import { startScheduler } from "@sixtdreamnight/companion-engine";
 import { napCatManager } from "./napcat-manager.js";
@@ -142,8 +142,11 @@ app.whenReady().then(async () => {
           // NOTE: The hardcoded SHA256 hash below is fragile — it must be regenerated
           // whenever the renderer bundle changes. For production, prefer a nonce-based
           // CSP served via a per-request nonce generated at runtime.
+          // style-src is restricted to 'self' (plus Google Fonts) so inline <style>
+          // elements are blocked; inline style *attributes* (style="...") remain
+          // allowed via style-src-attr for React inline styles.
           "Content-Security-Policy": [
-            "default-src 'self'; script-src 'self' 'sha256-0vhENBDiXt7C/5mQpX0pintncSH8cMav2aVDGcEhUZk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';",
+            "default-src 'self'; script-src 'self' 'sha256-0vhENBDiXt7C/5mQpX0pintncSH8cMav2aVDGcEhUZk='; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';",
           ],
         },
       });
@@ -162,6 +165,12 @@ app.whenReady().then(async () => {
 
   // 启用文件日志输出
   await setLogFile(join(getDataRoot(), "logs", "app.log"));
+
+  // 启动时校验 AI API Key（缺失仅告警，不阻断启动 — 用户可在设置向导中补配）
+  const startupConfig = await loadConfig();
+  if (!startupConfig.ai?.apiKey) {
+    logger.warn("AI_API_KEY 未配置：聊天功能不可用。请在 .env 中设置 AI_API_KEY，或通过设置向导配置。");
+  }
 
   await registerIpcHandlers();
   setupAutoUpdater();
