@@ -11,3 +11,4 @@ data/*.json
 
 logs/
 crashes/
+coverage/
