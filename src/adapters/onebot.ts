@@ -58,7 +58,7 @@ export type MessageHandler = (msg: QQMessage) => Promise<string[]>;
 // ---- 消息处理 ----
 
 /** 从 OneBot 消息段数组中提取纯文本 */
-function extractText(segments: MsgSegment[]): string {
+export function extractText(segments: MsgSegment[]): string {
   return segments
     .map((seg) => {
       if (seg.type === "text") return seg.data.text || "";
